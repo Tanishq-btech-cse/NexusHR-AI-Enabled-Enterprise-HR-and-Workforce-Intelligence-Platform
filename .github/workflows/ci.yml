@@ -20,5 +20,3 @@ jobs:
         run: echo
       - name: Build image
         run: docker build -t nexushr-backend:${{ github.sha }} .
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
