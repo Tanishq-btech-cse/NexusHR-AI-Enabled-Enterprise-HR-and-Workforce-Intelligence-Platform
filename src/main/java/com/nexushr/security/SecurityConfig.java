@@ -65,7 +65,10 @@ public class SecurityConfig {
                 .map(user -> User.withUsername(user.getEmail())
                         .password(user.getPasswordHash())
                         .disabled(!user.isEnabled())
-                        .roles(user.getRoles().stream().map(Enum::name).toArray(String[]::new))
+                        // 🌟 Change .roles() to .authorities() to prevent double prefixing:
+                        .authorities(user.getRoles().stream()
+                                .map(role -> "ROLE_" + role.name())
+                                .toArray(String[]::new))
                         .build())
                 .orElseThrow();
     }
