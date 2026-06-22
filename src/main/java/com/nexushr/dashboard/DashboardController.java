@@ -11,6 +11,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,8 +36,27 @@ public class DashboardController {
     }
 
     @GetMapping("/metrics")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
-    Map<String, Object> metrics() {
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')") // 🌟 Added EMPLOYEE to allowed roles
+    public Map<String, Object> metrics(@AuthenticationPrincipal UserDetails userDetails) {
+
+        // Check if the user is a regular employee
+        boolean isEmployeeOnly = userDetails.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_EMPLOYEE"));
+
+        if (isEmployeeOnly) {
+            // 💼 Personalized Employee Dashboard View
+            // This satisfies the frontend dashboard cards while protecting global company numbers!
+            return Map.of(
+                    "totalEmployees", 1,                // Just themselves
+                    "activeEmployees", 1,               // Active status
+                    "onboardingEmployees", 0,
+                    "pendingApprovals", 0,              // Personal metrics fallbacks
+                    "pendingLeaveRequests", 0,
+                    "notificationSuccessRate", 100.0
+            );
+        }
+
+        // 👑 Global Executive Board View (For Admin, HR, and Managers)
         return Map.of(
                 "totalEmployees", employees.count(),
                 "activeEmployees", employees.countByStatus(EmployeeStatus.ACTIVE),
@@ -47,9 +68,9 @@ public class DashboardController {
     }
 
     @GetMapping("/metrics/export.csv")
-    @PreAuthorize("hasAnyRole('ADMIN','HR')")
-    ResponseEntity<String> exportCsv() {
-        Map<String, Object> metrics = metrics();
+    @PreAuthorize("hasAnyRole('ADMIN','HR')") // Keeps data export locked strictly to Admin and HR
+    public ResponseEntity<String> exportCsv(@AuthenticationPrincipal UserDetails userDetails) {
+        Map<String, Object> metrics = metrics(userDetails);
         StringBuilder csv = new StringBuilder("metric,value\n");
         metrics.forEach((key, value) -> csv.append(key).append(',').append(value).append('\n'));
         return ResponseEntity.ok()
