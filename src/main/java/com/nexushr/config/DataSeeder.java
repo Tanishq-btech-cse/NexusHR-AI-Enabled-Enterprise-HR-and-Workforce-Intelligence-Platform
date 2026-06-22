@@ -22,19 +22,28 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Safe check: Only seed if the account doesn't exist yet
+        // 💼 1. Seed Employee Account if missing
         if (userRepository.findByEmailIgnoreCase("employee@nexushr.local").isEmpty()) {
             AppUser employee = new AppUser();
             employee.setEmail("employee@nexushr.local");
-            // Encrypts the password natively to pass Spring Security checks
             employee.setPasswordHash(passwordEncoder.encode("password123"));
             employee.setEnabled(true);
-
-            // Assigns the standard staff authorization role
             employee.setRoles(Set.of(AppRole.EMPLOYEE));
 
             userRepository.save(employee);
             System.out.println("✅ Standard employee account seeded successfully: employee@nexushr.local");
+        }
+
+        // 👑 2. Seed Admin Account if missing
+        if (userRepository.findByEmailIgnoreCase("admin@nexushr.local").isEmpty()) {
+            AppUser admin = new AppUser();
+            admin.setEmail("admin@nexushr.local");
+            admin.setPasswordHash(passwordEncoder.encode("admin123")); // Or your preferred admin pass
+            admin.setEnabled(true);
+            admin.setRoles(Set.of(AppRole.ADMIN)); // Ensure your AppRole enum has ADMIN
+
+            userRepository.save(admin);
+            System.out.println("👑 Administrative account seeded successfully: admin@nexushr.local");
         }
     }
 }

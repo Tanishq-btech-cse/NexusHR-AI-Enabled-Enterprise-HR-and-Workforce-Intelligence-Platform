@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -27,12 +29,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
-        System.out.println("🚨 INCOMING AUTHORIZATION HEADER: " + header); // 🔍 Watch this in Render Logs!
+        System.out.println("🚨 INCOMING AUTHORIZATION HEADER: " + header);
 
         if (header != null) {
             String token = null;
 
-            // Handle both standard Bearer prefix and raw token strings safely
             if (header.startsWith("Bearer ")) {
                 token = header.substring(7);
             } else if (!header.trim().isEmpty()) {
@@ -47,16 +48,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (roles != null) {
                         var authorities = roles.stream()
                                 .map(Object::toString)
-                                .map(role -> {
-                                    // Protect against double ROLE_ prefixing
-                                    return role.startsWith("ROLE_") ?
-                                            new SimpleGrantedAuthority(role) :
-                                            new SimpleGrantedAuthority("ROLE_" + role);
-                                })
+                                .map(role -> role.startsWith("ROLE_") ?
+                                        new SimpleGrantedAuthority(role) :
+                                        new SimpleGrantedAuthority("ROLE_" + role))
                                 .toList();
 
+                        // 🌟 FIX: Build a real UserDetails principal object instead of passing a raw String subject
+                        UserDetails principal = User.withUsername(claims.getSubject())
+                                .password("") // Context holder doesn't require credentials
+                                .authorities(authorities)
+                                .build();
+
                         UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
+                                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+
                         SecurityContextHolder.getContext().setAuthentication(authentication);
                         System.out.println("✅ SecurityContext successfully set for user: " + claims.getSubject() + " with roles: " + authorities);
                     }
