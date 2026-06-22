@@ -5,17 +5,21 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import java.util.StringJoiner;
+
 @RestController
 @CrossOrigin(origins = {
-    "http://localhost:5173",
-    "https://nexus-hr-ai-enabled-enterprise-hr-a.vercel.app",
-    "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-hujql098n.vercel.app"
+        "http://localhost:5173",
+        "https://nexus-hr-ai-enabled-enterprise-hr-a.vercel.app",
+        "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-hujql098n.vercel.app"
 })
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -30,10 +34,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
+        // 1. Run the database authentication checks
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
+
+        // 2. Fetch the fully mapped user details configuration profile
         AppUser user = users.findByEmailIgnoreCase(request.email()).orElseThrow();
-        return new TokenResponse(jwtService.issue(user), "Bearer");
+
+        // Convert the Enum Roles list to clear plain strings list using your new issue variant
+        // Or if you want to use the UserDetails object variant:
+        String token = jwtService.issue(user);
+
+        return new TokenResponse(token, "Bearer");
     }
 
     public record LoginRequest(@Email String email, @NotBlank String password) {
