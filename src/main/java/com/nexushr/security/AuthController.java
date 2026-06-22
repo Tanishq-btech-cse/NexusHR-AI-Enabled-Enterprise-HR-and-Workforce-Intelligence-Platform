@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@CrossOrigin(origins = {
+    "http://localhost:5173",
+    "https://nexus-hr-ai-enabled-enterprise-hr-a.vercel.app",
+    "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-hujql098n.vercel.app"
+})
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthenticationManager authenticationManager;
