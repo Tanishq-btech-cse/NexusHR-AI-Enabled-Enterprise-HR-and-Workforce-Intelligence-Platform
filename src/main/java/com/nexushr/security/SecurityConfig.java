@@ -43,10 +43,11 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(
+        
+        config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:5173",
                 "https://nexus-hr-ai-enabled-enterprise-hr-a.vercel.app",
-                "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-hujql098n.vercel.app"
+                "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-*.vercel.app"
         ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
@@ -54,7 +55,7 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config); // Blanket allowance for ALL controller routes
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
