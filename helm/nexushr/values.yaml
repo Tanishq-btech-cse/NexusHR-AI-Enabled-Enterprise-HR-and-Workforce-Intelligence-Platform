@@ -1,0 +1,29 @@
+image:
+  repository: nexushr-backend
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  type: ClusterIP
+  port: 8080
+
+env:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/nexushr
+  SPRING_DATASOURCE_USERNAME: nexushr
+  REDIS_HOST: redis
+
+secretEnv:
+  SPRING_DATASOURCE_PASSWORD: nexushr
+  JWT_SECRET: replace-this-with-at-least-32-characters
+  OPENAI_API_KEY: ""
+  SENTRY_DSN: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
