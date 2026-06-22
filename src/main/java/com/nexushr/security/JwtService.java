@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class JwtService {
@@ -25,25 +24,7 @@ public class JwtService {
         this.ttlSeconds = ttlSeconds;
     }
 
-    // 🌟 Enhanced method to handle clean String serialization for roles
-    public String generateToken(UserDetails userDetails) {
-        Instant now = Instant.now();
-
-        // Convert GrantedAuthorities (e.g. "ROLE_EMPLOYEE") to pure strings (e.g. "EMPLOYEE")
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-                .toList();
-
-        return Jwts.builder()
-                .subject(userDetails.getUsername())
-                .claims(Map.of("roles", roles)) // 🌟 Placed explicitly as plain text strings
-                .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plusSeconds(ttlSeconds)))
-                .signWith(key)
-                .compact();
-    }
-
-    // Keep your original method intact if other components call it directly
+    // 🌟 Standardized method using safe fluent chain methods to prevent claim wiping
     public String issue(AppUser user) {
         Instant now = Instant.now();
         List<String> roles = user.getRoles().stream()
@@ -52,7 +33,23 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(user.getEmail())
-                .claims(Map.of("uid", user.getId().toString(), "roles", roles))
+                .claim("uid", user.getId().toString()) // 🔐 Injected via native builder method
+                .claim("roles", roles)                 // 🌟 Named exactly "roles" as a flat text strings list
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusSeconds(ttlSeconds)))
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateToken(UserDetails userDetails) {
+        Instant now = Instant.now();
+        List<String> roles = userDetails.getAuthorities().stream()
+                .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                .toList();
+
+        return Jwts.builder()
+                .subject(userDetails.getUsername())
+                .claim("roles", roles)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(ttlSeconds)))
                 .signWith(key)
