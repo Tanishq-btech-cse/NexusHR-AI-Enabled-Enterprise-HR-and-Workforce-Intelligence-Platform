@@ -30,9 +30,9 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         return http
-                .cors(Customizer.withDefaults()) // Explicitly joins CORS processing to filter pipeline checks
+                .cors(Customizer.withDefaults()) 
                 .csrf(AbstractHttpConfigurer::disable)
-                .defineHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth // 🌟 Make sure this says authorizeHttpRequests
                         .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").hasRole("ADMIN")
                         .anyRequest().authenticated())
