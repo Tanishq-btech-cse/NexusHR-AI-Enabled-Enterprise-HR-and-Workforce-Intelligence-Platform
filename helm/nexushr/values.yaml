@@ -1,7 +1,8 @@
+# Inside helm/nexushr/values.yaml (or deployment.yaml)
 image:
   repository: mathpaltanishq/nexushr-backend
-  tag: v1.0.0
-  pullPolicy: IfNotPresent
+  tag: "v1.0.0"
+  pullPolicy: Always # 🌟 Change from IfNotPresent to Always
 
 replicaCount: 2
 
@@ -10,14 +11,18 @@ service:
   port: 8080
 
 env:
-  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/nexushr
+  SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5433/nexushr
   SPRING_DATASOURCE_USERNAME: nexushr
-  REDIS_HOST: redis
+  # 🌟 Ensure both host and port are explicitly passed to Spring Data Redis
+  SPRING_DATA_REDIS_HOST: host.docker.internal
+  SPRING_DATA_REDIS_PORT: "6379"
+  # Keep your OpenAI bypass line active as well
+  SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
 
 secretEnv:
   SPRING_DATASOURCE_PASSWORD: nexushr
-  JWT_SECRET: replace-this-with-at-least-32-characters
-  OPENAI_API_KEY: ""
+  JWT_SECRET: local-development-secret-with-at-least-32-characters
+  OPENAI_API_KEY: "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"
   SENTRY_DSN: ""
 
 resources:

@@ -30,11 +30,13 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         return http
-                .cors(Customizer.withDefaults()) 
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth // 🌟 Make sure this says authorizeHttpRequests
-                        .requestMatchers("/actuator/health", "/actuator/info", "/api/v1/auth/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
+                        // 🌟 FIX: Most specific request rules MUST go at the very top
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").hasRole("ADMIN")
+                        // 🌟 Then follow up with the broad generic allowances
+                        .requestMatchers("/actuator/**", "/api/v1/auth/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -60,12 +62,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    UserDetailsService userDetailsService(AppUserRepository repository) {
+    UserDetailsService userDetailsService(@org.springframework.context.annotation.Lazy AppUserRepository repository) {
         return username -> repository.findByEmailIgnoreCase(username)
                 .map(user -> User.withUsername(user.getEmail())
                         .password(user.getPasswordHash())
                         .disabled(!user.isEnabled())
-                        // 🌟 Change .roles() to .authorities() to prevent double prefixing:
                         .authorities(user.getRoles().stream()
                                 .map(role -> "ROLE_" + role.name())
                                 .toArray(String[]::new))

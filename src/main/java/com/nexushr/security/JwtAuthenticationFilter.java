@@ -24,6 +24,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
     }
 
+    // 🌟 ADDED: Bypasses logging and processing entirely for actuator metrics/health probes
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String servletPath = request.getServletPath();
+        String requestUri = request.getRequestURI();
+
+        org.springframework.util.AntPathMatcher pathMatcher = new org.springframework.util.AntPathMatcher();
+
+        // Check both paths against the broad actuator wildcard pattern
+        return pathMatcher.match("/actuator/**", servletPath)
+                || pathMatcher.match("/actuator/**", requestUri);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -53,9 +66,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                         new SimpleGrantedAuthority("ROLE_" + role))
                                 .toList();
 
-                        // 🌟 FIX: Build a real UserDetails principal object instead of passing a raw String subject
                         UserDetails principal = User.withUsername(claims.getSubject())
-                                .password("") // Context holder doesn't require credentials
+                                .password("")
                                 .authorities(authorities)
                                 .build();
 
