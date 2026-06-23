@@ -136,17 +136,20 @@ public class EmployeeService {
     @Transactional
     public void updateSecurityRole(UUID employeeId, String targetRole) {
         Employee employee = get(employeeId);
-        AppUser user = userRepository.findByEmail(employee.getWorkEmail())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-        Set<AppRole> roles = switch (targetRole.toUpperCase()) {
-            case "ADMIN" -> Set.of(AppRole.ADMIN);
-            case "HR" -> Set.of(AppRole.HR);
-            case "MANAGER" -> Set.of(AppRole.MANAGER);
-            default -> Set.of(AppRole.EMPLOYEE);
-        };
-        user.setRoles(roles);
-        userRepository.save(user);
+        // Find the security user entity bound to the corporate email handle
+        AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Security credentials profile not found"));
+
+        // Convert the string parameter mapping cleanly into explicit AppRole structures
+        switch (targetRole.toUpperCase()) {
+            case "ADMIN" -> securityUser.setRoles(Set.of(AppRole.ADMIN));
+            case "HR" -> securityUser.setRoles(Set.of(AppRole.HR));
+            case "MANAGER" -> securityUser.setRoles(Set.of(AppRole.MANAGER));
+            default -> securityUser.setRoles(Set.of(AppRole.EMPLOYEE));
+        }
+
+        userRepository.save(securityUser);
     }
 
     public List<WorkflowStep> workflow(UUID employeeId) {
@@ -156,8 +159,16 @@ public class EmployeeService {
     @Transactional
     public void delete(UUID id) {
         Employee employee = get(id);
-        userRepository.findByEmail(employee.getWorkEmail()).ifPresent(userRepository::delete);
-        workflowSteps.deleteAll(workflowSteps.findByEmployeeIdOrderByStepOrder(id));
+
+        // 1. Purge matching login security user accounts by email context tracking
+        userRepository.findByEmail(employee.getWorkEmail())
+                .ifPresent(userRepository::delete);
+
+        // 2. Purge bound workflow tracker artifacts
+        List<WorkflowStep> steps = workflowSteps.findByEmployeeIdOrderByStepOrder(id);
+        workflowSteps.deleteAll(steps);
+
+        // 3. Purge accompanying profile track entries
         employees.delete(employee);
     }
     private void createStep(UUID employeeId, String type, String name, int order) {

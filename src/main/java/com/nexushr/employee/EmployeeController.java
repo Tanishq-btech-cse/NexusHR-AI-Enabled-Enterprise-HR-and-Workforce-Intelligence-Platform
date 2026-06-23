@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,16 +21,16 @@ public class EmployeeController {
         this.service = service;
     }
 
-    // 👑 Restrict viewing to management
+    // 👑 Restrict viewing the absolute list to core management layers
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN','ROLE_HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     List<Employee> list() {
         return service.list();
     }
 
-    // 👑 Provisioning restricted to Admin/HR
+    // 👑 Employee provisioning is restricted to admin/HR
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN','ROLE_HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee create(@Valid @RequestBody EmployeeCreateRequest request) {
         Employee employee = new Employee();
         employee.setEmployeeCode(request.employeeCode());
@@ -43,32 +42,37 @@ public class EmployeeController {
         return service.create(employee);
     }
 
+    // 🌟 UPDATED: Employee can view their own profile, managers/HR can view any profile
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN') or @hrSecurity.isSelf(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
     Employee get(@PathVariable UUID id) {
         return service.get(id);
     }
 
+    // 👑 Corporate assignment adjustments are restricted
     @PutMapping("/{id}/role")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee assignRole(@PathVariable UUID id, @Valid @RequestBody RoleAssignmentRequest request) {
         return service.assignRole(id, request.department(), request.designation(), request.managerId());
     }
 
+    // 🌟 ADD THIS METHOD to allow employees to safely query their own UUID context
     @GetMapping("/me")
     public Employee getMe(org.springframework.security.core.Authentication authentication) {
-        String email = authentication.getName();
+        String email = authentication.getName(); // Extracts sub email identifier from JWT container
         return service.findByEmail(email);
     }
 
+    // 👑 Termination/offboarding process trigger restricted
     @PostMapping("/{id}/offboarding")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee offboard(@PathVariable UUID id) {
         return service.offboard(id);
     }
 
+    // 🌟 UPDATED: Employees can only upload checking files or credentials to their own record track
     @PostMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#id))")
+    @PreAuthorize("hasAnyRole('ADMIN','HR') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#id))")
     EmployeeDocument uploadDocument(@PathVariable UUID id, @Valid @RequestBody DocumentRequest request) {
         EmployeeDocument document = new EmployeeDocument();
         document.setDocumentType(request.documentType());
@@ -77,37 +81,42 @@ public class EmployeeController {
         return service.addDocument(id, document);
     }
 
+    // 🌟 UPDATED: Employees can view their own verified documents, managers/HR can view any profile document package
     @GetMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN') or @hrSecurity.isSelf(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
     List<EmployeeDocument> documents(@PathVariable UUID id) {
         return service.documents(id);
     }
 
-    // 🌟 ADMIN ROLE MANAGEMENT ENDPOINTS
-    @PutMapping("/{id}/security-role")
-    @PreAuthorize("hasAnyRole('ADMIN','ROLE_ADMIN')")
-    public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
-        service.updateSecurityRole(id, request.get("role"));
+    // 👑 Lifecycle tracking updates remain visible only to internal staff structures
+    @GetMapping("/{id}/workflow")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
+    List<WorkflowStep> workflow(@PathVariable UUID id) {
+        return service.workflow(id);
     }
 
+    // 👑 Workflow evaluations remain locked down completely to decision roles
+    @PostMapping("/workflow/{stepId}/decision")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','PAYROLL')")
+    WorkflowStep decide(@PathVariable UUID stepId, @Valid @RequestBody DecisionRequest request) {
+        return service.decide(stepId, request.status(), request.approverId(), request.comment());
+    }
+
+    // 👑 Restrict role assignment matrix modifications to Admin accounts only
+    @PutMapping("/{id}/security-role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+        String targetRole = request.get("role");
+        service.updateSecurityRole(id, targetRole);
+    }
+
+    // 👑 Restrict deleting a corporate entity permanently to Admin role accounts only
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable UUID id) {
         service.delete(id);
     }
 
-
-    @GetMapping("/debug/auth")
-    public Map<String, Object> debugAuth(Authentication authentication) {
-
-        return Map.of(
-                "name", authentication.getName(),
-                "authorities", authentication.getAuthorities()
-                        .stream()
-                        .map(Object::toString)
-                        .toList()
-        );
-    }
     public record EmployeeCreateRequest(@NotBlank String employeeCode, @NotBlank String firstName,
                                         @NotBlank String lastName, @Email String workEmail,
                                         @NotNull LocalDate joiningDate, Map<String, Object> profile) {
@@ -116,7 +125,8 @@ public class EmployeeController {
     public record RoleAssignmentRequest(@NotBlank String department, @NotBlank String designation, UUID managerId) {
     }
 
-    public record DocumentRequest(@NotBlank String documentType, @NotBlank String fileName, @NotBlank String storageUrl) {
+    public record DocumentRequest(@NotBlank String documentType, @NotBlank String fileName,
+                                  @NotBlank String storageUrl) {
     }
 
     public record DecisionRequest(@NotNull ApprovalStatus status, UUID approverId, String comment) {
