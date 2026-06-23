@@ -133,6 +133,24 @@ public class EmployeeService {
         step.setDecidedAt(Instant.now());
         return step;
     }
+    @Transactional
+    public void updateSecurityRole(UUID employeeId, String targetRole) {
+        Employee employee = get(employeeId);
+
+        // Find the security user entity bound to the corporate email handle
+        AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Security credentials profile not found"));
+
+        // Convert the string parameter mapping cleanly into explicit AppRole structures
+        switch (targetRole.toUpperCase()) {
+            case "ADMIN" -> securityUser.setRoles(Set.of(AppRole.ADMIN));
+            case "HR" -> securityUser.setRoles(Set.of(AppRole.HR));
+            case "MANAGER" -> securityUser.setRoles(Set.of(AppRole.MANAGER));
+            default -> securityUser.setRoles(Set.of(AppRole.EMPLOYEE));
+        }
+
+        userRepository.save(securityUser);
+    }
 
     public List<WorkflowStep> workflow(UUID employeeId) {
         get(employeeId);

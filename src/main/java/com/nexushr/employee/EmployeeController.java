@@ -99,6 +99,15 @@ public class EmployeeController {
     WorkflowStep decide(@PathVariable UUID stepId, @Valid @RequestBody DecisionRequest request) {
         return service.decide(stepId, request.status(), request.approverId(), request.comment());
     }
+
+    // 👑 Restrict role assignment matrix modifications to Admin accounts only
+    @PutMapping("/{id}/security-role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
+        String targetRole = request.get("role");
+        service.updateSecurityRole(id, targetRole);
+    }
+    
     // 👑 Restrict deleting a corporate entity permanently to Admin role accounts only
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
