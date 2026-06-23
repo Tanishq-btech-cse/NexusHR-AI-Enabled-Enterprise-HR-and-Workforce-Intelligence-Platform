@@ -56,6 +56,11 @@ public class AppUser extends AuditableEntity {
         this.passwordHash = passwordHash;
     }
 
+    // 🌟 FIXED: Maps standard helper aliases to the underlying JPA hash target column cleanly
+    public void setPassword(String password) {
+        this.passwordHash = password;
+    }
+
     public Set<AppRole> getRoles() {
         return roles;
     }
