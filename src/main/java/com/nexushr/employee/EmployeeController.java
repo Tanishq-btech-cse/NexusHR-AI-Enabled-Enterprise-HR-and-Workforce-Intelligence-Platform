@@ -21,16 +21,16 @@ public class EmployeeController {
         this.service = service;
     }
 
-    // 👑 Restrict viewing the absolute list to core management layers
+    // 👑 Restrict viewing to management
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN','ROLE_HR')")
     List<Employee> list() {
         return service.list();
     }
 
-    // 👑 Employee provisioning is restricted to admin/HR
+    // 👑 Provisioning restricted to Admin/HR
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN','ROLE_HR')")
     Employee create(@Valid @RequestBody EmployeeCreateRequest request) {
         Employee employee = new Employee();
         employee.setEmployeeCode(request.employeeCode());
@@ -42,35 +42,32 @@ public class EmployeeController {
         return service.create(employee);
     }
 
-    // 🌟 UPDATED: Employee can view their own profile, managers/HR can view any profile
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN') or @hrSecurity.isSelf(#id)")
     Employee get(@PathVariable UUID id) {
         return service.get(id);
     }
 
-    // 👑 Corporate assignment adjustments are restricted
     @PutMapping("/{id}/role")
-    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN')")
     Employee assignRole(@PathVariable UUID id, @Valid @RequestBody RoleAssignmentRequest request) {
         return service.assignRole(id, request.department(), request.designation(), request.managerId());
     }
-    // 🌟 ADD THIS METHOD to allow employees to safely query their own UUID context
+
     @GetMapping("/me")
     public Employee getMe(org.springframework.security.core.Authentication authentication) {
-        String email = authentication.getName(); // Extracts sub email identifier from JWT container
+        String email = authentication.getName();
         return service.findByEmail(email);
     }
-    // 👑 Termination/offboarding process trigger restricted
+
     @PostMapping("/{id}/offboarding")
-    @PreAuthorize("hasAnyRole('ADMIN','HR')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN')")
     Employee offboard(@PathVariable UUID id) {
         return service.offboard(id);
     }
 
-    // 🌟 UPDATED: Employees can only upload checking files or credentials to their own record track
     @PostMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#id))")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','ROLE_ADMIN') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#id))")
     EmployeeDocument uploadDocument(@PathVariable UUID id, @Valid @RequestBody DocumentRequest request) {
         EmployeeDocument document = new EmployeeDocument();
         document.setDocumentType(request.documentType());
@@ -79,42 +76,24 @@ public class EmployeeController {
         return service.addDocument(id, document);
     }
 
-    // 🌟 UPDATED: Employees can view their own verified documents, managers/HR can view any profile document package
     @GetMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','ROLE_ADMIN') or @hrSecurity.isSelf(#id)")
     List<EmployeeDocument> documents(@PathVariable UUID id) {
         return service.documents(id);
     }
 
-    // 👑 Lifecycle tracking updates remain visible only to internal staff structures
-    @GetMapping("/{id}/workflow")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
-    List<WorkflowStep> workflow(@PathVariable UUID id) {
-        return service.workflow(id);
-    }
-
-    // 👑 Workflow evaluations remain locked down completely to decision roles
-    @PostMapping("/workflow/{stepId}/decision")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','PAYROLL')")
-    WorkflowStep decide(@PathVariable UUID stepId, @Valid @RequestBody DecisionRequest request) {
-        return service.decide(stepId, request.status(), request.approverId(), request.comment());
-    }
-
-    // 👑 Restrict role assignment matrix modifications to Admin accounts only
+    // 🌟 ADMIN ROLE MANAGEMENT ENDPOINTS
     @PutMapping("/{id}/security-role")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','ROLE_ADMIN')")
     public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
-        String targetRole = request.get("role");
-        service.updateSecurityRole(id, targetRole);
+        service.updateSecurityRole(id, request.get("role"));
     }
-    
-    // 👑 Restrict deleting a corporate entity permanently to Admin role accounts only
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','ROLE_ADMIN')")
     public void delete(@PathVariable UUID id) {
         service.delete(id);
     }
-
     public record EmployeeCreateRequest(@NotBlank String employeeCode, @NotBlank String firstName,
                                         @NotBlank String lastName, @Email String workEmail,
                                         @NotNull LocalDate joiningDate, Map<String, Object> profile) {
