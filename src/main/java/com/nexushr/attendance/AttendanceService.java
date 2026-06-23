@@ -50,9 +50,6 @@ public class AttendanceService {
             throw new IllegalArgumentException("Leave end date must be on or after start date");
         }
 
-        // 🌟 DYNAMIC FALLBACK ENHANCEMENT:
-        // Before validating the balance container, verify if this user requires an on-the-fly seed allocation wrapper.
-        // This makes sure both old and new employee profiles pass evaluation gates flawlessly!
         balances(employeeId);
 
         LeaveBalance balance = balances.findByEmployeeIdAndLeaveType(employeeId, leaveType)
@@ -84,7 +81,6 @@ public class AttendanceService {
         return leave;
     }
 
-    // 🌟 UPDATED: Fetches existing balances, or dynamically allocates default structures if missing
     @Transactional
     public List<LeaveBalance> balances(UUID employeeId) {
         List<LeaveBalance> currentBalances = balances.findByEmployeeId(employeeId);
@@ -117,8 +113,7 @@ public class AttendanceService {
     }
 
     public Map<String, Object> dashboard(LocalDate date) {
-        // 🌟 Fetch the actual list of pending leave applications from the repository
-        List<LeaveRequest> pendingRequestsList = leaves.findByStatus(LeaveStatus.PENDING); // Make sure findByStatus exists in LeaveRequestRepository
+        List<LeaveRequest> pendingRequestsList = leaves.findByStatus(LeaveStatus.PENDING);
 
         return Map.of(
                 "date", date,
@@ -126,7 +121,7 @@ public class AttendanceService {
                 "remote", attendance.countByWorkDateAndStatus(date, AttendanceStatus.REMOTE),
                 "absent", attendance.countByWorkDateAndStatus(date, AttendanceStatus.ABSENT),
                 "pendingLeaves", leaves.countByStatus(LeaveStatus.PENDING),
-                "pendingRequests", pendingRequestsList // 🌟 ADD THIS: The actual array objects for the frontend table
+                "pendingRequests", pendingRequestsList
         );
     }
 }
