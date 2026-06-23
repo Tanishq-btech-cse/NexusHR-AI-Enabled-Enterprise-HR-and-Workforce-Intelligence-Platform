@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -93,6 +94,19 @@ public class EmployeeController {
     @PreAuthorize("hasAnyRole('ADMIN','ROLE_ADMIN')")
     public void delete(@PathVariable UUID id) {
         service.delete(id);
+    }
+
+
+    @GetMapping("/debug/auth")
+    public Map<String, Object> debugAuth(Authentication authentication) {
+
+        return Map.of(
+                "name", authentication.getName(),
+                "authorities", authentication.getAuthorities()
+                        .stream()
+                        .map(Object::toString)
+                        .toList()
+        );
     }
     public record EmployeeCreateRequest(@NotBlank String employeeCode, @NotBlank String firstName,
                                         @NotBlank String lastName, @Email String workEmail,

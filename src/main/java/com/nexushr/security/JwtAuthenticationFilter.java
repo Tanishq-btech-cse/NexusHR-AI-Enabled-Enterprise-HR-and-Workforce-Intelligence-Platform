@@ -38,48 +38,54 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
         String header = request.getHeader("Authorization");
-        System.out.println("🚨 INCOMING AUTHORIZATION HEADER: " + header);
 
-        if (header != null) {
-            String token = null;
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
 
-            if (header.startsWith("Bearer ")) {
-                token = header.substring(7);
-            } else if (!header.trim().isEmpty()) {
-                token = header.trim();
-            }
+            try {
+                Claims claims = jwtService.parse(token);
 
-            if (token != null) {
-                try {
-                    Claims claims = jwtService.parse(token);
-                    List<?> roles = claims.get("roles", List.class);
+                System.out.println("=================================");
+                System.out.println("JWT SUBJECT : " + claims.getSubject());
+                System.out.println("JWT ROLES   : " + claims.get("roles"));
+                System.out.println("REQUEST URI : " + request.getRequestURI());
+                System.out.println("=================================");
 
-                    if (roles != null) {
-                        var authorities = roles.stream()
-                                .map(Object::toString)
-                                .map(role -> role.startsWith("ROLE_") ?
-                                        new SimpleGrantedAuthority(role) :
-                                        new SimpleGrantedAuthority("ROLE_" + role))
-                                .toList();
+                List<?> roles = claims.get("roles", List.class);
 
-                        UserDetails principal = User.withUsername(claims.getSubject())
-                                .password("")
-                                .authorities(authorities)
-                                .build();
+                if (roles != null) {
+                    var authorities = roles.stream()
+                            .map(Object::toString)
+                            .map(role -> role.startsWith("ROLE_")
+                                    ? new SimpleGrantedAuthority(role)
+                                    : new SimpleGrantedAuthority("ROLE_" + role))
+                            .toList();
 
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                    System.out.println("AUTHORITIES : " + authorities);
 
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                        System.out.println("✅ SecurityContext successfully set for user: " + claims.getSubject() + " with roles: " + authorities);
-                    }
-                } catch (Exception e) {
-                    System.out.println("❌ JWT Processing failed: " + e.getMessage());
+                    UserDetails principal = User.withUsername(claims.getSubject())
+                            .password("")
+                            .authorities(authorities)
+                            .build();
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    principal,
+                                    null,
+                                    authorities
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
