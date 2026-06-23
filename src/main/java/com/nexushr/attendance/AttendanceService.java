@@ -117,12 +117,16 @@ public class AttendanceService {
     }
 
     public Map<String, Object> dashboard(LocalDate date) {
+        // 🌟 Fetch the actual list of pending leave applications from the repository
+        List<LeaveRequest> pendingRequestsList = leaves.findByStatus(LeaveStatus.PENDING); // Make sure findByStatus exists in LeaveRequestRepository
+
         return Map.of(
                 "date", date,
                 "present", attendance.countByWorkDateAndStatus(date, AttendanceStatus.PRESENT),
                 "remote", attendance.countByWorkDateAndStatus(date, AttendanceStatus.REMOTE),
                 "absent", attendance.countByWorkDateAndStatus(date, AttendanceStatus.ABSENT),
-                "pendingLeaves", leaves.countByStatus(LeaveStatus.PENDING)
+                "pendingLeaves", leaves.countByStatus(LeaveStatus.PENDING),
+                "pendingRequests", pendingRequestsList // 🌟 ADD THIS: The actual array objects for the frontend table
         );
     }
 }
