@@ -61,7 +61,12 @@ public class EmployeeController {
     Employee assignRole(@PathVariable UUID id, @Valid @RequestBody RoleAssignmentRequest request) {
         return service.assignRole(id, request.department(), request.designation(), request.managerId());
     }
-
+    // 🌟 ADD THIS METHOD to allow employees to safely query their own UUID context
+    @GetMapping("/me")
+    public Employee getMe(org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName(); // Extracts sub email identifier from JWT container
+        return service.findByEmail(email);
+    }
     // 👑 Termination/offboarding process trigger restricted
     @PostMapping("/{id}/offboarding")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
