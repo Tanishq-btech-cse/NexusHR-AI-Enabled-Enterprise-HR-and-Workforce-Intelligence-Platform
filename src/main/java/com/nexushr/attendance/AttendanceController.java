@@ -27,43 +27,42 @@ public class AttendanceController {
         this.service = service;
     }
 
+    // 🌟 FIX: Ensure employees can only punch for themselves
     @PostMapping("/biometric-punch")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#request.employeeId()))")
     AttendanceRecord punch(@Valid @RequestBody PunchRequest request) {
         return service.biometricPunch(request.employeeId(), request.deviceId());
     }
 
+    // 🌟 FIX: Ensure employees can only request leave for themselves
     @PostMapping("/leave-requests")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#request.employeeId()))")
     LeaveRequest requestLeave(@Valid @RequestBody LeaveRequestDto request) {
         return service.requestLeave(request.employeeId(), request.leaveType(), request.startDate(), request.endDate(), request.reason());
     }
 
+    // 👑 Restricted to Management Layer
     @PostMapping("/leave-requests/{id}/decision")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     LeaveRequest decideLeave(@PathVariable UUID id, @Valid @RequestBody LeaveDecisionRequest request) {
         return service.decideLeave(id, request.status(), request.approverId());
     }
 
+    // 🌟 FIX: Employee can only see their own balance profile
     @GetMapping("/employees/{employeeId}/leave-balances")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#employeeId)")
     List<LeaveBalance> balances(@PathVariable UUID employeeId) {
         return service.balances(employeeId);
     }
 
+    // 👑 Global view dashboard restricted to administrative staff
     @GetMapping("/dashboard")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     Map<String, Object> dashboard(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return service.dashboard(date);
     }
 
-    public record PunchRequest(@NotNull UUID employeeId, @NotBlank String deviceId) {
-    }
-
-    public record LeaveRequestDto(@NotNull UUID employeeId, @NotBlank String leaveType,
-                                  @NotNull LocalDate startDate, @NotNull LocalDate endDate, String reason) {
-    }
-
-    public record LeaveDecisionRequest(@NotNull LeaveStatus status, UUID approverId) {
-    }
+    public record PunchRequest(@NotNull UUID employeeId, @NotBlank String deviceId) {}
+    public record LeaveRequestDto(@NotNull UUID employeeId, @NotBlank String leaveType, @NotNull LocalDate startDate, @NotNull LocalDate endDate, String reason) {}
+    public record LeaveDecisionRequest(@NotNull LeaveStatus status, UUID approverId) {}
 }

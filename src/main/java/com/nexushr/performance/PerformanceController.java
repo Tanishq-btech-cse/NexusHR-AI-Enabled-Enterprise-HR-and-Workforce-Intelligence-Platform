@@ -27,8 +27,9 @@ public class PerformanceController {
         this.service = service;
     }
 
+    // 🌟 FIX: Employees can create tasks, but strictly inside their own profile track
     @PostMapping("/goals")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#request.employeeId()))")
     Goal createGoal(@Valid @RequestBody GoalRequest request) {
         Goal goal = new Goal();
         goal.setEmployeeId(request.employeeId());
@@ -38,6 +39,7 @@ public class PerformanceController {
         return service.createGoal(goal);
     }
 
+    // 👑 Review generation is restricted to evaluators
     @PostMapping("/reviews")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     PerformanceReview createReview(@Valid @RequestBody ReviewRequest request) {
@@ -51,25 +53,20 @@ public class PerformanceController {
         return service.createReview(review);
     }
 
+    // 🌟 FIX: Employee can read their own goals exclusively
     @GetMapping("/employees/{employeeId}/goals")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#employeeId)")
     List<Goal> goals(@PathVariable UUID employeeId) {
         return service.goals(employeeId);
     }
 
+    // 🌟 FIX: Employee can view their own feedback scorecard scorecard safely
     @GetMapping("/employees/{employeeId}/scorecard")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#employeeId)")
     List<PerformanceReview> scorecard(@PathVariable UUID employeeId) {
         return service.scorecard(employeeId);
     }
 
-    public record GoalRequest(@NotNull UUID employeeId, @NotBlank String title, String description, LocalDate dueDate) {
-    }
-
-    public record ReviewRequest(@NotNull UUID employeeId, @NotBlank String cycle,
-                                @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal managerRating,
-                                @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal peerRating,
-                                @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal selfRating,
-                                String feedback) {
-    }
+    public record GoalRequest(@NotNull UUID employeeId, @NotBlank String title, String description, LocalDate dueDate) {}
+    public record ReviewRequest(@NotNull UUID employeeId, @NotBlank String cycle, @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal managerRating, @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal peerRating, @DecimalMin("1.0") @DecimalMax("5.0") BigDecimal selfRating, String feedback) {}
 }

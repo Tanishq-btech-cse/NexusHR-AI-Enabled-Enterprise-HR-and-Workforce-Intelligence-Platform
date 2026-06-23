@@ -27,12 +27,14 @@ public class EmployeeController {
         this.service = service;
     }
 
+    // 👑 Restrict viewing the absolute list to core management layers
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     List<Employee> list() {
         return service.list();
     }
 
+    // 👑 Employee provisioning is restricted to admin/HR
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee create(@Valid @RequestBody EmployeeCreateRequest request) {
@@ -46,26 +48,30 @@ public class EmployeeController {
         return service.create(employee);
     }
 
+    // 🌟 UPDATED: Employee can view their own profile, managers/HR can view any profile
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
     Employee get(@PathVariable UUID id) {
         return service.get(id);
     }
 
+    // 👑 Corporate assignment adjustments are restricted
     @PutMapping("/{id}/role")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee assignRole(@PathVariable UUID id, @Valid @RequestBody RoleAssignmentRequest request) {
         return service.assignRole(id, request.department(), request.designation(), request.managerId());
     }
 
+    // 👑 Termination/offboarding process trigger restricted
     @PostMapping("/{id}/offboarding")
     @PreAuthorize("hasAnyRole('ADMIN','HR')")
     Employee offboard(@PathVariable UUID id) {
         return service.offboard(id);
     }
 
+    // 🌟 UPDATED: Employees can only upload checking files or credentials to their own record track
     @PostMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR') or (hasRole('EMPLOYEE') and @hrSecurity.isSelf(#id))")
     EmployeeDocument uploadDocument(@PathVariable UUID id, @Valid @RequestBody DocumentRequest request) {
         EmployeeDocument document = new EmployeeDocument();
         document.setDocumentType(request.documentType());
@@ -74,18 +80,21 @@ public class EmployeeController {
         return service.addDocument(id, document);
     }
 
+    // 🌟 UPDATED: Employees can view their own verified documents, managers/HR can view any profile document package
     @GetMapping("/{id}/documents")
-    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER') or @hrSecurity.isSelf(#id)")
     List<EmployeeDocument> documents(@PathVariable UUID id) {
         return service.documents(id);
     }
 
+    // 👑 Lifecycle tracking updates remain visible only to internal staff structures
     @GetMapping("/{id}/workflow")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     List<WorkflowStep> workflow(@PathVariable UUID id) {
         return service.workflow(id);
     }
 
+    // 👑 Workflow evaluations remain locked down completely to decision roles
     @PostMapping("/workflow/{stepId}/decision")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','PAYROLL')")
     WorkflowStep decide(@PathVariable UUID stepId, @Valid @RequestBody DecisionRequest request) {

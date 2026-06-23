@@ -45,8 +45,9 @@ public class PayrollController {
         return service.payslips(id);
     }
 
+    // 🌟 FIX: Employee can only access their personal payslips
     @GetMapping("/employees/{employeeId}/payslips")
-    @PreAuthorize("hasAnyRole('ADMIN','PAYROLL','HR','EMPLOYEE')")
+    @PreAuthorize("hasAnyRole('ADMIN','PAYROLL','HR') or @hrSecurity.isSelf(#employeeId)")
     List<Payslip> employeePayslips(@PathVariable UUID employeeId) {
         return service.employeePayslips(employeeId);
     }
@@ -60,6 +61,5 @@ public class PayrollController {
                 .body(service.exportCsv(id));
     }
 
-    public record PayrollRunRequest(@NotNull @Min(2024) Integer year, @NotNull @Min(1) @Max(12) Integer month) {
-    }
+    public record PayrollRunRequest(@NotNull @Min(2024) Integer year, @NotNull @Min(1) @Max(12) Integer month) {}
 }
