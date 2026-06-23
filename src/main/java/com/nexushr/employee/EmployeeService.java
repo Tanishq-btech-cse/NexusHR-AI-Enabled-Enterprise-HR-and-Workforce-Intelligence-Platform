@@ -138,7 +138,21 @@ public class EmployeeService {
         get(employeeId);
         return workflowSteps.findByEmployeeIdOrderByStepOrder(employeeId);
     }
+    @Transactional
+    public void delete(UUID id) {
+        Employee employee = get(id);
 
+        // 1. Purge matching login security user accounts by email context tracking
+        userRepository.findByEmail(employee.getWorkEmail())
+                .ifPresent(userRepository::delete);
+
+        // 2. Purge bound workflow tracker artifacts
+        List<WorkflowStep> steps = workflowSteps.findByEmployeeIdOrderByStepOrder(id);
+        workflowSteps.deleteAll(steps);
+
+        // 3. Purge accompanying profile track entries
+        employees.delete(employee);
+    }
     private void createStep(UUID employeeId, String type, String name, int order) {
         WorkflowStep step = new WorkflowStep();
         step.setEmployeeId(employeeId);

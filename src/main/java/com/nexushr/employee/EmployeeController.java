@@ -5,13 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -104,6 +98,12 @@ public class EmployeeController {
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','PAYROLL')")
     WorkflowStep decide(@PathVariable UUID stepId, @Valid @RequestBody DecisionRequest request) {
         return service.decide(stepId, request.status(), request.approverId(), request.comment());
+    }
+    // 👑 Restrict deleting a corporate entity permanently to Admin role accounts only
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void delete(@PathVariable UUID id) {
+        service.delete(id);
     }
 
     public record EmployeeCreateRequest(@NotBlank String employeeCode, @NotBlank String firstName,
