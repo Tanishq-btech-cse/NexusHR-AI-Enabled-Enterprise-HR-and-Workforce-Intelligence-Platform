@@ -3,6 +3,8 @@ package com.nexushr.employee;
 import com.nexushr.security.AppRole;
 import com.nexushr.security.AppUser;
 import com.nexushr.security.AppUserRepository;
+import com.nexushr.attendance.LeaveBalance;         // 🌟 Import your LeaveBalance entity
+import com.nexushr.attendance.LeaveBalanceRepository; // 🌟 Import your LeaveBalance repository
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,17 +22,20 @@ public class EmployeeService {
     private final WorkflowStepRepository workflowSteps;
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LeaveBalanceRepository leaveBalanceRepository; // 🌟 Injected repository
 
     public EmployeeService(EmployeeRepository employees,
                            EmployeeDocumentRepository documents,
                            WorkflowStepRepository workflowSteps,
                            AppUserRepository userRepository,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           LeaveBalanceRepository leaveBalanceRepository) {
         this.employees = employees;
         this.documents = documents;
         this.workflowSteps = workflowSteps;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.leaveBalanceRepository = leaveBalanceRepository;
     }
 
     @Transactional
@@ -42,23 +47,36 @@ public class EmployeeService {
         if (!userRepository.existsByEmail(employee.getWorkEmail())) {
             AppUser securityUser = new AppUser();
             securityUser.setEmail(employee.getWorkEmail());
-
-            // Hashes default password string ("password123") securely before entry
             securityUser.setPassword(passwordEncoder.encode("password123"));
-
-            // 🌟 FIXED: Safe reference directly using enum array mapping definition
             securityUser.setRoles(Set.of(AppRole.EMPLOYEE));
-
             userRepository.save(securityUser);
         }
 
-        // Onboarding lifecycle sequence maps out correctly as normal
+        // 🌟 AUTOMATIC LEAVE BALANCE INITIALIZATION
+        // Fixed: Initializing with clean BigDecimal allocations
+        initDefaultLeaveBalance(saved.getId(), "ANNUAL", 21);
+        initDefaultLeaveBalance(saved.getId(), "SICK", 12);
+        initDefaultLeaveBalance(saved.getId(), "CASUAL", 7);
+
+        // Onboarding lifecycle sequence
         createStep(saved.getId(), "ONBOARDING", "HR profile validation", 1);
         createStep(saved.getId(), "ONBOARDING", "Manager role assignment", 2);
         createStep(saved.getId(), "ONBOARDING", "IT access provisioning", 3);
         return saved;
     }
 
+    // 🌟 FIXED HELPER METHOD: Converts int parameters to BigDecimal wrappers cleanly
+    private void initDefaultLeaveBalance(UUID employeeId, String leaveType, int openingBalance) {
+        LeaveBalance balance = new LeaveBalance();
+        balance.setEmployeeId(employeeId);
+        balance.setLeaveType(leaveType);
+
+        // Converts the primitive int data streams into valid BigDecimal objects
+        balance.setOpeningBalance(java.math.BigDecimal.valueOf(openingBalance));
+        balance.setConsumed(java.math.BigDecimal.ZERO);
+
+        leaveBalanceRepository.save(balance);
+    }
     public List<Employee> list() {
         return employees.findAll();
     }
