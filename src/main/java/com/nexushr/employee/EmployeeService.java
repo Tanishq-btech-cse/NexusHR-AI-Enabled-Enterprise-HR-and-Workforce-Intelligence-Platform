@@ -63,6 +63,14 @@ public class EmployeeService {
         return employees.findAll();
     }
 
+    // 🌟 ADD THIS METHOD to resolve self-profile context queries
+    public Employee findByEmail(String email) {
+        return employees.findAll().stream()
+                .filter(e -> e.getWorkEmail().equalsIgnoreCase(email))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Employee profile matching email not found"));
+    }
+
     public Employee get(UUID id) {
         return employees.findById(id).orElseThrow(() -> new EntityNotFoundException("Employee not found"));
     }
