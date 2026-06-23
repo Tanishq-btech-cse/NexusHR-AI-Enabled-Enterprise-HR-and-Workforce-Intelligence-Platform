@@ -1,7 +1,7 @@
 image:
-  repository: your-dockerhub-username/nexushr-backend
+  repository: mathpaltanishq/nexushr-backend
   tag: v1.0.0
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 replicaCount: 2
 
