@@ -2,7 +2,7 @@
 image:
   repository: mathpaltanishq/nexushr-backend
   tag: "v1.0.0"
-  pullPolicy: Always # 🌟 Change from IfNotPresent to Always
+  pullPolicy: Always
 
 replicaCount: 2
 
@@ -13,10 +13,8 @@ service:
 env:
   SPRING_DATASOURCE_URL: jdbc:postgresql://host.docker.internal:5433/nexushr
   SPRING_DATASOURCE_USERNAME: nexushr
-  # 🌟 Ensure both host and port are explicitly passed to Spring Data Redis
   SPRING_DATA_REDIS_HOST: host.docker.internal
   SPRING_DATA_REDIS_PORT: "6379"
-  # Keep your OpenAI bypass line active as well
   SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
 
 secretEnv:

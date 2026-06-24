@@ -43,7 +43,6 @@ public class EmployeeService {
         employee.setStatus(EmployeeStatus.ONBOARDING);
         Employee saved = employees.save(employee);
 
-        // 🌟 AUTOMATIC CREDENTIAL PROVISIONING
         if (!userRepository.existsByEmail(employee.getWorkEmail())) {
             AppUser securityUser = new AppUser();
             securityUser.setEmail(employee.getWorkEmail());
@@ -52,26 +51,20 @@ public class EmployeeService {
             userRepository.save(securityUser);
         }
 
-        // 🌟 AUTOMATIC LEAVE BALANCE INITIALIZATION
-        // Fixed: Initializing with clean BigDecimal allocations
         initDefaultLeaveBalance(saved.getId(), "ANNUAL", 21);
         initDefaultLeaveBalance(saved.getId(), "SICK", 12);
         initDefaultLeaveBalance(saved.getId(), "CASUAL", 7);
 
-        // Onboarding lifecycle sequence
         createStep(saved.getId(), "ONBOARDING", "HR profile validation", 1);
         createStep(saved.getId(), "ONBOARDING", "Manager role assignment", 2);
         createStep(saved.getId(), "ONBOARDING", "IT access provisioning", 3);
         return saved;
     }
 
-    // 🌟 FIXED HELPER METHOD: Converts int parameters to BigDecimal wrappers cleanly
     private void initDefaultLeaveBalance(UUID employeeId, String leaveType, int openingBalance) {
         LeaveBalance balance = new LeaveBalance();
         balance.setEmployeeId(employeeId);
         balance.setLeaveType(leaveType);
-
-        // Converts the primitive int data streams into valid BigDecimal objects
         balance.setOpeningBalance(java.math.BigDecimal.valueOf(openingBalance));
         balance.setConsumed(java.math.BigDecimal.ZERO);
 
@@ -81,7 +74,6 @@ public class EmployeeService {
         return employees.findAll();
     }
 
-    // 🌟 ADD THIS METHOD to resolve self-profile context queries
     public Employee findByEmail(String email) {
         return employees.findAll().stream()
                 .filter(e -> e.getWorkEmail().equalsIgnoreCase(email))
@@ -136,12 +128,9 @@ public class EmployeeService {
     @Transactional
     public void updateSecurityRole(UUID employeeId, String targetRole) {
         Employee employee = get(employeeId);
-
-        // Find the security user entity bound to the corporate email handle
         AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Security credentials profile not found"));
 
-        // Convert the string parameter mapping cleanly into explicit AppRole structures
         switch (targetRole.toUpperCase()) {
             case "ADMIN" -> securityUser.setRoles(Set.of(AppRole.ADMIN));
             case "HR" -> securityUser.setRoles(Set.of(AppRole.HR));
@@ -159,16 +148,10 @@ public class EmployeeService {
     @Transactional
     public void delete(UUID id) {
         Employee employee = get(id);
-
-        // 1. Purge matching login security user accounts by email context tracking
         userRepository.findByEmail(employee.getWorkEmail())
                 .ifPresent(userRepository::delete);
-
-        // 2. Purge bound workflow tracker artifacts
         List<WorkflowStep> steps = workflowSteps.findByEmployeeIdOrderByStepOrder(id);
         workflowSteps.deleteAll(steps);
-
-        // 3. Purge accompanying profile track entries
         employees.delete(employee);
     }
     private void createStep(UUID employeeId, String type, String name, int order) {

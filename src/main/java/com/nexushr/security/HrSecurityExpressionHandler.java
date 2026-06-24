@@ -18,18 +18,12 @@ public class HrSecurityExpressionHandler {
         this.employeeRepository = employeeRepository;
     }
 
-    /**
-     * Checks if the currently authenticated user corresponds to the employeeId parameter.
-     */
     public boolean isSelf(UUID employeeId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetails userDetails)) {
             return false;
         }
-
         String loggedInEmail = userDetails.getUsername();
-
-        // Find employee by email and match ID
         return employeeRepository.findAll().stream()
                 .filter(e -> e.getWorkEmail().equalsIgnoreCase(loggedInEmail))
                 .map(Employee::getId)

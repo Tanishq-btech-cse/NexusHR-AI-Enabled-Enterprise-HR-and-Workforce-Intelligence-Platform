@@ -22,7 +22,6 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 💼 1. Seed Employee Account if missing
         if (userRepository.findByEmailIgnoreCase("employee@nexushr.local").isEmpty()) {
             AppUser employee = new AppUser();
             employee.setEmail("employee@nexushr.local");
@@ -34,13 +33,12 @@ public class DataSeeder implements CommandLineRunner {
             System.out.println("✅ Standard employee account seeded successfully: employee@nexushr.local");
         }
 
-        // 👑 2. Seed Admin Account if missing
         if (userRepository.findByEmailIgnoreCase("admin@nexushr.local").isEmpty()) {
             AppUser admin = new AppUser();
             admin.setEmail("admin@nexushr.local");
-            admin.setPasswordHash(passwordEncoder.encode("admin123")); // Or your preferred admin pass
+            admin.setPasswordHash(passwordEncoder.encode("admin123"));
             admin.setEnabled(true);
-            admin.setRoles(Set.of(AppRole.ADMIN)); // Ensure your AppRole enum has ADMIN
+            admin.setRoles(Set.of(AppRole.ADMIN));
 
             userRepository.save(admin);
             System.out.println("👑 Administrative account seeded successfully: admin@nexushr.local");

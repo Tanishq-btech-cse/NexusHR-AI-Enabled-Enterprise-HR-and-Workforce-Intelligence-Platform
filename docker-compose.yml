@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: nexushr             # Changed to match the API connection URL
-      POSTGRES_USER: nexushr           # Changed to match the API username
-      POSTGRES_PASSWORD: nexushr       # Changed to match the API password
+      POSTGRES_DB: nexushr
+      POSTGRES_USER: nexushr
+      POSTGRES_PASSWORD: nexushr
     ports:
       - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nexushr"] # This will now pass perfectly!
+      test: ["CMD-SHELL", "pg_isready -U nexushr"]
       interval: 10s
       timeout: 5s
       retries: 5

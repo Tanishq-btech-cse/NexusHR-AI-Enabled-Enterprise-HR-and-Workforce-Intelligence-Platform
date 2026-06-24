@@ -56,7 +56,6 @@ public class JwtService {
     }
 
     public Claims parse(String token) {
-        // Safe verification builder ensuring signature matching
         return Jwts.parser()
                 .verifyWith(key)
                 .build()

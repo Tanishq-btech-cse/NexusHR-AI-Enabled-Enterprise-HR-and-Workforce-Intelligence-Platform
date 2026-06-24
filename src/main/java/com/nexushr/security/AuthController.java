@@ -35,18 +35,11 @@ public class AuthController {
 
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        // 1. Run the database authentication checks
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
-
-        // 2. Fetch the fully mapped user details configuration profile
         AppUser user = users.findByEmailIgnoreCase(request.email()).orElseThrow();
-
-        // Convert the Enum Roles list to clear plain strings list using your new issue variant
-        // Or if you want to use the UserDetails object variant:
         String token = jwtService.issue(user);
-
         return new TokenResponse(token, "Bearer");
     }
 

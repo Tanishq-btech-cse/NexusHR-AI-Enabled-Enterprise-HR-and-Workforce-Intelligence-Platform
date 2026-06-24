@@ -7,11 +7,14 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-
+@Getter
+@Setter
 @Entity
 @Table(name = "attendance_records")
 public class AttendanceRecord extends AuditableEntity {
@@ -27,18 +30,6 @@ public class AttendanceRecord extends AuditableEntity {
     @Column(nullable = false)
     private AttendanceStatus status = AttendanceStatus.PRESENT;
     private String biometricDeviceId;
-
-    public UUID getId() { return id; }
-    public UUID getEmployeeId() { return employeeId; }
-    public void setEmployeeId(UUID employeeId) { this.employeeId = employeeId; }
-    public LocalDate getWorkDate() { return workDate; }
-    public void setWorkDate(LocalDate workDate) { this.workDate = workDate; }
-    public Instant getCheckInAt() { return checkInAt; }
-    public void setCheckInAt(Instant checkInAt) { this.checkInAt = checkInAt; }
     public Instant getCheckOutAt() { return checkOutAt; }
-    public void setCheckOutAt(Instant checkOutAt) { this.checkOutAt = checkOutAt; }
-    public AttendanceStatus getStatus() { return status; }
-    public void setStatus(AttendanceStatus status) { this.status = status; }
     public String getBiometricDeviceId() { return biometricDeviceId; }
-    public void setBiometricDeviceId(String biometricDeviceId) { this.biometricDeviceId = biometricDeviceId; }
 }

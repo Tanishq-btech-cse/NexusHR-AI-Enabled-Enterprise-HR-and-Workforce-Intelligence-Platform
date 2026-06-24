@@ -38,7 +38,6 @@ public class DashboardController {
     @GetMapping("/metrics")
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER','EMPLOYEE')")
     public Map<String, Object> metrics() {
-        // 🌟 Natively fetch authorities directly from the SecurityContext safely
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         boolean isEmployeeOnly = false;
@@ -48,7 +47,6 @@ public class DashboardController {
         }
 
         if (isEmployeeOnly) {
-            // 💼 Personalized Employee Dashboard View
             return Map.of(
                     "totalEmployees", 1,
                     "activeEmployees", 1,
@@ -59,7 +57,6 @@ public class DashboardController {
             );
         }
 
-        // 👑 Global Executive Board View (For Admin, HR, and Managers)
         return Map.of(
                 "totalEmployees", employees.count(),
                 "activeEmployees", employees.countByStatus(EmployeeStatus.ACTIVE),

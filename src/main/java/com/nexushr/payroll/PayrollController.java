@@ -45,7 +45,6 @@ public class PayrollController {
         return service.payslips(id);
     }
 
-    // 🌟 FIX: Employee can only access their personal payslips
     @GetMapping("/employees/{employeeId}/payslips")
     @PreAuthorize("hasAnyRole('ADMIN','PAYROLL','HR') or @hrSecurity.isSelf(#employeeId)")
     List<Payslip> employeePayslips(@PathVariable UUID employeeId) {

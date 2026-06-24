@@ -5,10 +5,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-
+@Getter
+@Setter
 @Entity
 @Table(name = "leave_balances")
 public class LeaveBalance extends AuditableEntity {
@@ -27,14 +30,10 @@ public class LeaveBalance extends AuditableEntity {
 
     public UUID getId() { return id; }
     public UUID getEmployeeId() { return employeeId; }
-    public void setEmployeeId(UUID employeeId) { this.employeeId = employeeId; }
     public String getLeaveType() { return leaveType; }
-    public void setLeaveType(String leaveType) { this.leaveType = leaveType; }
     public BigDecimal getOpeningBalance() { return openingBalance; }
-    public void setOpeningBalance(BigDecimal openingBalance) { this.openingBalance = openingBalance; }
     public BigDecimal getAccrued() { return accrued; }
     public void setAccrued(BigDecimal accrued) { this.accrued = accrued; }
     public BigDecimal getConsumed() { return consumed; }
-    public void setConsumed(BigDecimal consumed) { this.consumed = consumed; }
     public BigDecimal available() { return openingBalance.add(accrued).subtract(consumed); }
 }
