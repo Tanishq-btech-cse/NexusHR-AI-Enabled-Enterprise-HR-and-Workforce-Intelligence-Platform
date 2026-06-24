@@ -102,7 +102,7 @@ public class EmployeeController {
         return service.decide(stepId, request.status(), request.approverId(), request.comment());
     }
 
-    // 👑 Restrict role assignment matrix modifications to Admin and HR accounts
+    // 🌟 FIX: Allow both ADMIN and HR to shift security permission tiers
     @PutMapping("/{id}/security-role")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
