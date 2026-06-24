@@ -8,7 +8,15 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexushr}
     username: ${SPRING_DATASOURCE_USERNAME:nexushr}
     password: ${SPRING_DATASOURCE_PASSWORD:nexushr}
+
+  # 🌟 ADDED: Forces data.sql initialization on your external cloud database
+  sql:
+    init:
+      mode: always
+
   jpa:
+    # 🌟 ADDED: Tells Hibernate to generate tables BEFORE running data.sql
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     open-in-view: false
@@ -17,6 +25,8 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+
+  # ... (rest of your configuration stays exactly the same)
   flyway:
     enabled: false
   data:
