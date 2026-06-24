@@ -20,19 +20,21 @@ public class AiAssistantController {
     @PostMapping("/query")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public Map<String, String> queryAssistant(@RequestBody Map<String, String> request) {
-        String userPrompt = request.get("prompt");
+        try {
+            String userPrompt = request.get("prompt");
+            String systemRules = "You are NexusHR AI...";
 
-        // System prompt to give the AI context about its identity and job
-        String systemRules = "You are NexusHR AI, an enterprise workforce assistant. " +
-                "Provide concise, professional answers regarding HR, payroll, and performance metrics.";
+            String aiResponse = chatClient.prompt()
+                    .system(systemRules)
+                    .user(userPrompt)
+                    .call()
+                    .content();
 
-        // Call the OpenAI model via Spring AI
-        String aiResponse = chatClient.prompt()
-                .system(systemRules)
-                .user(userPrompt)
-                .call()
-                .content();
-
-        return Map.of("answer", aiResponse);
+            return Map.of("answer", aiResponse);
+        } catch (Exception e) {
+            // This will print the ACTUAL error to your browser console
+            e.printStackTrace();
+            return Map.of("answer", "ERROR: " + e.getMessage());
+        }
     }
 }
