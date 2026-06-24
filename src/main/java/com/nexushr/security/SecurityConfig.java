@@ -45,13 +45,15 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
+
+        // 🌟 FIX: Broadened the Vercel wildcard to catch all preview deployment branches
         config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:5173",
-                "https://nexus-hr-ai-enabled-enterprise-hr-a.vercel.app",
-                "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-*.vercel.app"
+                "https://*.vercel.app"
         ));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Added PATCH just to be safe for future updates
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
