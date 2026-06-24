@@ -36,7 +36,7 @@ public class SecurityConfig {
                         // 🌟 FIX: Most specific request rules MUST go at the very top
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").hasRole("ADMIN")
                         // 🌟 Then follow up with the broad generic allowances
-                        .requestMatchers("/actuator/**", "/api/v1/auth/**").permitAll()
+                        .requestMatchers("/actuator/**", "/api/v1/auth/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
