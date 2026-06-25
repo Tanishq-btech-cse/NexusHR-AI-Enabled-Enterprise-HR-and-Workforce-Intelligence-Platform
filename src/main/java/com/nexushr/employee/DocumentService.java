@@ -10,6 +10,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.net.MalformedURLException;
 
 @Service
 public class DocumentService {
@@ -87,5 +92,26 @@ public class DocumentService {
 
         // Delete the record from the database
         documentRepository.delete(doc);
+    }
+    public EmployeeDocument getDocumentById(UUID id) {
+        return documentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+    }
+
+    // Load the physical file as a downloadable/viewable Resource
+    public Resource loadDocumentAsResource(UUID documentId) {
+        EmployeeDocument doc = getDocumentById(documentId);
+        try {
+            Path filePath = Paths.get(doc.getStorageUrl());
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists()) {
+                return resource;
+            } else {
+                throw new RuntimeException("File not found on server.");
+            }
+        } catch (MalformedURLException ex) {
+            throw new RuntimeException("File path invalid.", ex);
+        }
     }
 }

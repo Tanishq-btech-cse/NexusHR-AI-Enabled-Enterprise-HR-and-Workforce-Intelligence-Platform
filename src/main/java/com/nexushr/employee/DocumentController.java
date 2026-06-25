@@ -1,5 +1,8 @@
 package com.nexushr.employee;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -72,5 +75,16 @@ public class DocumentController {
         } catch (SecurityException e) {
             return ResponseEntity.status(403).body("{\"message\": \"" + e.getMessage() + "\"}");
         }
+    }
+    @GetMapping("/{id}/download")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable UUID id) {
+        Resource resource = documentService.loadDocumentAsResource(id);
+        EmployeeDocument doc = documentService.getDocumentById(id);
+
+        return ResponseEntity.ok()
+                // "inline" tells the browser to try and open it (like a PDF or Image) instead of forcing a download
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getFileName() + "\"")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(resource);
     }
 }
