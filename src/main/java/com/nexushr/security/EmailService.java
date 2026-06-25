@@ -1,40 +1,51 @@
 package com.nexushr.security;
 
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final Resend resend;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    // Spring injects the API key from your application.yml / Environment Variables
+    public EmailService(@Value("${app.resend.api-key}") String apiKey) {
+        this.resend = new Resend(apiKey);
     }
 
-    @Async // Runs in the background so it doesn't freeze the frontend while sending
+    @Async
     public void sendResetEmail(String to, String resetLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("NexusHR - Password Reset Request");
-        message.setText("Hello,\n\n" +
-                "You have requested to reset your NexusHR password.\n" +
+        String body = "Hello,\n\nYou have requested to reset your NexusHR password.\n" +
                 "Click the link below to change it. This link will expire in 15 minutes.\n\n" +
-                resetLink + "\n\n" +
-                "If you did not request this, please ignore this email.");
+                resetLink + "\n\nIf you did not request this, please ignore this email.";
 
-        mailSender.send(message);
+        sendEmail(to, "NexusHR - Password Reset Request", body);
     }
 
     @Async
     public void sendGeneralEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
+        sendEmail(to, subject, body);
+    }
 
-        mailSender.send(message);
+    // A private helper method to actually talk to the Resend API
+    private void sendEmail(String to, String subject, String body) {
+        CreateEmailOptions params = CreateEmailOptions.builder()
+                // NOTE: Until you buy a real domain name, you MUST use this exact 'from' address
+                .from("NexusHR <onboarding@resend.dev>")
+                .to(to)
+                .subject(subject)
+                .text(body)
+                .build();
+
+        try {
+            resend.emails().send(params);
+            System.out.println("✅ Email successfully sent via Resend API to: " + to);
+        } catch (ResendException e) {
+            System.err.println("❌ Failed to send email via API: " + e.getMessage());
+        }
     }
 }

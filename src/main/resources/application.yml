@@ -42,18 +42,13 @@ spring:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
 
-  # --- Mail Configuration ---
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_USERNAME:your-email@gmail.com}
-    password: ${MAIL_PASSWORD:your-google-app-password}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+  # --- Custom App Security ---
+  app:
+    security:
+      jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
+      jwt-ttl-seconds: ${JWT_TTL_SECONDS:3600}
+    resend:
+      api-key: ${RESEND_API_KEY:}
 
 # --- Server & Monitoring ---
 server:
