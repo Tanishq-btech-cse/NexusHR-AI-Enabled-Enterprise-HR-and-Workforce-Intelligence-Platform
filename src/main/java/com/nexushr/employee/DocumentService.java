@@ -16,8 +16,8 @@ public class DocumentService {
 
     private final EmployeeDocumentRepository documentRepository;
 
-    // Creates a folder named "uploads" in your project directory
-    private final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
+    private final String UPLOAD_DIR = System.getProperty("java.io.tmpdir")
+            + (System.getProperty("java.io.tmpdir").endsWith("/") ? "" : "/") + "uploads/";
 
     public DocumentService(EmployeeDocumentRepository documentRepository) {
         this.documentRepository = documentRepository;
