@@ -7,9 +7,12 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     private final EmailService emailService;
+    private final SmsService smsService; // <-- Add this
 
-    public NotificationService(EmailService emailService) {
+    // Inject both services via the constructor
+    public NotificationService(EmailService emailService, SmsService smsService) {
         this.emailService = emailService;
+        this.smsService = smsService;
     }
 
     public NotificationMessage queue(NotificationMessage message) {
@@ -20,16 +23,15 @@ public class NotificationService {
                     message.getBody()
             );
         } else if (NotificationChannel.SMS.equals(message.getChannel())) {
-            System.out.println("SMS triggered, but Twilio is not configured yet!");
+            // Trigger the background SMS sender!
+            // Note: Twilio ignores the 'subject', so we just pass the body.
+            smsService.sendSms(message.getRecipient(), message.getBody());
         }
 
         return message;
     }
 
-    // --- Added back to fix DashboardController compilation ---
     public Double successRate() {
-        // Returns 100% success rate for the dashboard metric.
-        // You can update this with real database logic later!
         return 100.0;
     }
 }
