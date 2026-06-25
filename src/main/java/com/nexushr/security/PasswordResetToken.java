@@ -13,7 +13,7 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne(targetEntity = AppUser.class, fetch = FetchType.EAGER)
+    @ManyToOne(targetEntity = AppUser.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
     private AppUser user;
 
