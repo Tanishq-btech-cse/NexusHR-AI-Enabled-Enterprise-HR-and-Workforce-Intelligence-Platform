@@ -4,8 +4,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -95,7 +97,14 @@ public class EmployeeController {
     @PutMapping("/{id}/security-role")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
-        String targetRole = request.get("role");
+        // Check for "role", and if it's missing, check for "security-role"
+        String targetRole = request.getOrDefault("role", request.get("security-role"));
+
+        // Guard clause to prevent NullPointerExceptions in the Service layer
+        if (targetRole == null || targetRole.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid role must be provided in the JSON payload.");
+        }
+
         service.updateSecurityRole(id, targetRole);
     }
 

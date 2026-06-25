@@ -6,9 +6,11 @@ import com.nexushr.security.AppUserRepository;
 import com.nexushr.attendance.LeaveBalance;         // 🌟 Import your LeaveBalance entity
 import com.nexushr.attendance.LeaveBalanceRepository; // 🌟 Import your LeaveBalance repository
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -125,19 +127,28 @@ public class EmployeeService {
         step.setDecidedAt(Instant.now());
         return step;
     }
+
     @Transactional
     public void updateSecurityRole(UUID employeeId, String targetRole) {
         Employee employee = get(employeeId);
-        AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Security credentials profile not found"));
 
+        // 1. Use ResponseStatusException so Spring knows to send a 404 instead of crashing with a 500
+        AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Cannot update role: No security credentials profile found for this employee."));
+
+        // 2. Clear the existing Hibernate-managed collection safely
+        securityUser.getRoles().clear();
+
+        // 3. Add the new role to the existing mutable set
         switch (targetRole.toUpperCase()) {
-            case "ADMIN" -> securityUser.setRoles(Set.of(AppRole.ADMIN));
-            case "HR" -> securityUser.setRoles(Set.of(AppRole.HR));
-            case "MANAGER" -> securityUser.setRoles(Set.of(AppRole.MANAGER));
-            default -> securityUser.setRoles(Set.of(AppRole.EMPLOYEE));
+            case "ADMIN" -> securityUser.getRoles().add(AppRole.ADMIN);
+            case "HR" -> securityUser.getRoles().add(AppRole.HR);
+            case "MANAGER" -> securityUser.getRoles().add(AppRole.MANAGER);
+            default -> securityUser.getRoles().add(AppRole.EMPLOYEE);
         }
 
+        // 4. Save the user
         userRepository.save(securityUser);
     }
 
