@@ -36,6 +36,8 @@ public class Employee extends AuditableEntity {
     private UUID managerId;
     private LocalDate joiningDate;
     private LocalDate exitDate;
+    @Column(name = "is_remote")
+    private boolean isRemote = false;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmployeeStatus status = EmployeeStatus.DRAFT;

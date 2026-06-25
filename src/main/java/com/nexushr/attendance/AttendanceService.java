@@ -1,5 +1,7 @@
 package com.nexushr.attendance;
 
+import com.nexushr.employee.Employee;
+import com.nexushr.employee.EmployeeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -7,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
@@ -17,28 +21,69 @@ public class AttendanceService {
     private final AttendanceRecordRepository attendance;
     private final LeaveRequestRepository leaves;
     private final LeaveBalanceRepository balances;
+    private final EmployeeRepository employeeRepository; // 🌟 Added Employee Repository
 
-    public AttendanceService(AttendanceRecordRepository attendance, LeaveRequestRepository leaves, LeaveBalanceRepository balances) {
+    // 🌟 Updated constructor to include EmployeeRepository
+    public AttendanceService(AttendanceRecordRepository attendance,
+                             LeaveRequestRepository leaves,
+                             LeaveBalanceRepository balances,
+                             EmployeeRepository employeeRepository) {
         this.attendance = attendance;
         this.leaves = leaves;
         this.balances = balances;
+        this.employeeRepository = employeeRepository;
     }
 
     @Transactional
     public AttendanceRecord biometricPunch(UUID employeeId, String deviceId) {
         LocalDate today = LocalDate.now();
+
+        // 1. Find existing record for today or create a new one
         AttendanceRecord record = attendance.findByEmployeeIdAndWorkDate(employeeId, today).orElseGet(() -> {
             AttendanceRecord created = new AttendanceRecord();
             created.setEmployeeId(employeeId);
             created.setWorkDate(today);
-            created.setStatus(AttendanceStatus.PRESENT);
             return created;
         });
+
+        // 2. Fetch the employee profile to check their Work Model (Remote vs Office)
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+
         if (record.getCheckInAt() == null) {
+            // First punch of the day
             record.setCheckInAt(Instant.now());
+            // Tentatively set their status based on their profile
+            record.setStatus(employee.isRemote() ? AttendanceStatus.REMOTE : AttendanceStatus.PRESENT);
         } else {
+            // Second punch of the day (Punch Out)
             record.setCheckOutAt(Instant.now());
+
+            // 🌟 3. Strict Time Window Business Rules Engine
+            LocalTime punchInStart = LocalTime.of(8, 0);   // 8:00 AM
+            LocalTime punchInEnd = LocalTime.of(9, 0);     // 9:00 AM
+            LocalTime punchOutStart = LocalTime.of(17, 0); // 5:00 PM
+            LocalTime punchOutEnd = LocalTime.of(18, 0);   // 6:00 PM
+
+            // Convert server Instant time to Local Time for comparison
+            ZoneId zone = ZoneId.systemDefault();
+            LocalTime actualPunchIn = record.getCheckInAt().atZone(zone).toLocalTime();
+            LocalTime actualPunchOut = record.getCheckOutAt().atZone(zone).toLocalTime();
+
+            // Evaluate if punches fell exactly inside the allowed windows
+            boolean isValidPunchIn = !actualPunchIn.isBefore(punchInStart) && !actualPunchIn.isAfter(punchInEnd);
+            boolean isValidPunchOut = !actualPunchOut.isBefore(punchOutStart) && !actualPunchOut.isAfter(punchOutEnd);
+
+            // 4. Assign Final Status
+            if (isValidPunchIn && isValidPunchOut) {
+                // They followed the rules, set status based on their assigned work model
+                record.setStatus(employee.isRemote() ? AttendanceStatus.REMOTE : AttendanceStatus.PRESENT);
+            } else {
+                // They missed the compliance windows, automatically flag as absent
+                record.setStatus(AttendanceStatus.ABSENT);
+            }
         }
+
         record.setBiometricDeviceId(deviceId);
         return attendance.save(record);
     }

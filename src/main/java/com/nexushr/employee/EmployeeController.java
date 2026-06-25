@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -107,7 +108,15 @@ public class EmployeeController {
 
         service.updateSecurityRole(id, targetRole);
     }
+    @PatchMapping("/{id}/remote")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'HR')")
+    public ResponseEntity<?> toggleRemote(@PathVariable UUID id, @RequestParam boolean isRemote) {
 
+        // We now call the service instead of the repository directly
+        service.toggleRemoteStatus(id, isRemote);
+
+        return ResponseEntity.ok().body("{\"message\": \"Work model updated successfully.\"}");
+    }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable UUID id) {

@@ -173,4 +173,13 @@ public class EmployeeService {
         step.setStepOrder(order);
         workflowSteps.save(step);
     }
+
+    // Add this new method to EmployeeService.java
+    public void toggleRemoteStatus(UUID employeeId, boolean isRemote) {
+        Employee employee = employees.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        employee.setRemote(isRemote);
+        employees.save(employee);
+    }
 }
