@@ -42,14 +42,6 @@ spring:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
 
-  # --- Custom App Security ---
-  app:
-    security:
-      jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
-      jwt-ttl-seconds: ${JWT_TTL_SECONDS:3600}
-    resend:
-      api-key: ${RESEND_API_KEY:}
-
 # --- Server & Monitoring ---
 server:
   port: ${SERVER_PORT:8080}
@@ -64,11 +56,13 @@ management:
       probes:
         enabled: true
 
-# --- Custom App Security ---
+# --- Custom App Security & Notifications ---
 app:
   security:
     jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
     jwt-ttl-seconds: ${JWT_TTL_SECONDS:3600}
+  resend:
+    api-key: ${RESEND_API_KEY:}
 
 # --- Sentry Logging ---
 sentry:
