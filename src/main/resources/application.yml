@@ -4,15 +4,15 @@ spring:
   threads:
     virtual:
       enabled: true
+
+  # --- Database ---
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexushr}
     username: ${SPRING_DATASOURCE_USERNAME:nexushr}
     password: ${SPRING_DATASOURCE_PASSWORD:nexushr}
-
   sql:
     init:
       mode: always
-
   jpa:
     defer-datasource-initialization: true
     hibernate:
@@ -25,12 +25,16 @@ spring:
           time_zone: UTC
   flyway:
     enabled: false
+
+  # --- Caching ---
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
   cache:
     type: redis
+
+  # --- Spring AI ---
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}
@@ -38,6 +42,20 @@ spring:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
 
+  # --- Mail Configuration ---
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-google-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# --- Server & Monitoring ---
 server:
   port: ${SERVER_PORT:8080}
 
@@ -51,17 +69,17 @@ management:
       probes:
         enabled: true
 
+# --- Custom App Security ---
 app:
   security:
     jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
     jwt-ttl-seconds: ${JWT_TTL_SECONDS:3600}
 
+# --- Sentry Logging ---
 sentry:
   dsn: ${SENTRY_DSN:}
   traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.1}
 
 logging:
   level:
-    org:
-      springframework:
-        security=DEBUG:
+    org.springframework.security: DEBUG

@@ -3,6 +3,7 @@ package com.nexushr.security;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -17,60 +18,64 @@ public class PasswordResetController {
     private final AppUserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-    // private final EmailService emailService; // We will need this to actually send the email!
+    private final EmailService emailService;
 
     public PasswordResetController(AppUserRepository userRepository,
                                    PasswordResetTokenRepository tokenRepository,
-                                   PasswordEncoder passwordEncoder) {
+                                   PasswordEncoder passwordEncoder,
+                                   EmailService emailService) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @PostMapping("/forgot-password")
+    @Transactional
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
 
-        // 1. Find user (Don't throw an error if not found, to prevent email enumeration hacking)
+        // We use .orElse(null) to prevent leaking which emails exist in the database (Security Best Practice)
         AppUser user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) {
-            return ResponseEntity.ok(Map.of("message", "If that email exists, a reset link has been sent."));
+        if (user != null) {
+            // Delete any old unused tokens for this user
+            tokenRepository.deleteByUser(user);
+
+            // Generate secure token
+            String token = UUID.randomUUID().toString();
+            tokenRepository.save(new PasswordResetToken(token, user));
+
+            // Format the frontend link (Make sure this matches your Vercel URL in production!)
+            String resetLink = "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-q69s6soby.vercel.app/reset-password?token=" + token;
+
+            // Send the email
+            emailService.sendResetEmail(user.getEmail(), resetLink);
         }
 
-        // 2. Generate a secure random token
-        String token = UUID.randomUUID().toString();
-
-        // 3. Save it to the database
-        tokenRepository.save(new PasswordResetToken(token, user));
-
-        // 4. Send the email (You will implement this next)
-        String resetLink = "https://nexushr.vercel.app/reset-password?token=" + token;
-        // emailService.sendResetEmail(user.getEmail(), resetLink);
-
+        // Always return success so hackers can't "guess" emails by looking for errors
         return ResponseEntity.ok(Map.of("message", "If that email exists, a reset link has been sent."));
     }
 
     @PostMapping("/reset-password")
+    @Transactional
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
         String token = request.get("token");
         String newPassword = request.get("newPassword");
 
-        // 1. Find the token in the database
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid or expired token."));
 
-        // 2. Check if it is expired
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             tokenRepository.delete(resetToken);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token has expired. Please request a new one.");
         }
 
-        // 3. Hash the new password and save it
+        // Hash and save the new password
         AppUser user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
-        // 4. Delete the token so it can never be used again
+        // Delete token so it cannot be reused
         tokenRepository.delete(resetToken);
 
         return ResponseEntity.ok(Map.of("message", "Password successfully reset."));
