@@ -7,3 +7,10 @@ VALUES ('3f8b89c2-5b94-4b82-901d-7201b1de31c0', 'admin@nexushr.local', '$2a$10$v
 INSERT INTO app_user_roles (user_id, role)
 SELECT id, 'ADMIN' FROM app_users WHERE LOWER(email) = 'admin@nexushr.local'
     ON CONFLICT DO NOTHING;
+
+-- Set all existing nulls to false (or true, depending on your default business logic)
+UPDATE employees SET is_remote = false WHERE is_remote IS NULL;
+
+-- Optional but recommended: Add a constraint so this doesn't happen again
+ALTER TABLE employees ALTER COLUMN is_remote SET DEFAULT false;
+ALTER TABLE employees ALTER COLUMN is_remote SET NOT NULL;
