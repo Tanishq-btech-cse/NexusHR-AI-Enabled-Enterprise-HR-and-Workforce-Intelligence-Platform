@@ -62,4 +62,30 @@ public class DocumentService {
     public List<EmployeeDocument> getPendingDocuments() {
         return documentRepository.findByVerifiedFalse();
     }
+
+    // 4. Fetch all documents for a specific employee
+    public List<EmployeeDocument> getMyDocuments(UUID employeeId) {
+        return documentRepository.findByEmployeeId(employeeId);
+    }
+
+    // 5. Delete a document (with ownership security check)
+    public void deleteDocument(UUID documentId, UUID employeeId) {
+        EmployeeDocument doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document not found"));
+
+        // Security check: Prevent Employee A from deleting Employee B's files
+        if (!doc.getEmployeeId().equals(employeeId)) {
+            throw new SecurityException("You do not have permission to delete this document.");
+        }
+
+        // Delete the physical file from the server's hard drive
+        try {
+            Files.deleteIfExists(Paths.get(doc.getStorageUrl()));
+        } catch (IOException e) {
+            System.err.println("Failed to delete physical file: " + e.getMessage());
+        }
+
+        // Delete the record from the database
+        documentRepository.delete(doc);
+    }
 }

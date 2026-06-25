@@ -55,4 +55,22 @@ public class DocumentController {
         EmployeeDocument updatedDoc = documentService.verifyDocument(id, verified);
         return ResponseEntity.ok(updatedDoc);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<EmployeeDocument>> getMyDocuments(@RequestParam UUID employeeId) {
+        return ResponseEntity.ok(documentService.getMyDocuments(employeeId));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDocument(
+            @PathVariable UUID id,
+            @RequestParam UUID employeeId) {
+
+        try {
+            documentService.deleteDocument(id, employeeId);
+            return ResponseEntity.ok().body("{\"message\": \"Document deleted successfully\"}");
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body("{\"message\": \"" + e.getMessage() + "\"}");
+        }
+    }
 }
