@@ -27,4 +27,14 @@ public class EmailService {
 
         mailSender.send(message);
     }
+
+    @Async
+    public void sendGeneralEmail(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+
+        mailSender.send(message);
+    }
 }
