@@ -12,6 +12,8 @@ SELECT id, 'ADMIN' FROM app_users WHERE LOWER(email) = 'admin@nexushr.local'
 UPDATE employees SET is_remote = false WHERE is_remote IS NULL;
 
 -- Optional but recommended: Add a constraint so this doesn't happen again
+ALTER TABLE employees ALTER COLUMN is_remote SET DEFAULT false;
+ALTER TABLE employees ALTER COLUMN is_remote SET NOT NULL;
 ALTER TABLE employees ADD COLUMN father_name VARCHAR(255);
 ALTER TABLE employees ADD COLUMN mother_name VARCHAR(255);
 ALTER TABLE employees ADD COLUMN address TEXT;

@@ -4,11 +4,20 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexushr}
     username: ${SPRING_DATASOURCE_USERNAME:nexushr}
     password: ${SPRING_DATASOURCE_PASSWORD:nexushr}
+  sql:
+    init:
+      mode: always
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     open-in-view: false
@@ -19,12 +28,14 @@ spring:
           time_zone: UTC
   flyway:
     enabled: false
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
   cache:
     type: redis
+
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}
@@ -49,7 +60,17 @@ app:
   security:
     jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
     jwt-ttl-seconds: ${JWT_TTL_SECONDS:3600}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    phone-number: ${TWILIO_PHONE_NUMBER:}
 
 sentry:
   dsn: ${SENTRY_DSN:}
   traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.1}
+
+logging:
+  level:
+    org.springframework.security: DEBUG
