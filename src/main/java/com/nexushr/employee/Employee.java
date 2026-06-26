@@ -36,6 +36,14 @@ public class Employee extends AuditableEntity {
     private UUID managerId;
     private LocalDate joiningDate;
     private LocalDate exitDate;
+    private String fatherName;
+    private String motherName;
+    private String aadhaarNumber;
+    private String panNumber;
+    @Column(columnDefinition = "TEXT")
+    private String address;
+    private boolean profileCompleted = false;
+    private String editRequestStatus = "NONE";
     @Column(name = "is_remote")
     private boolean isRemote = false;
     @Enumerated(EnumType.STRING)

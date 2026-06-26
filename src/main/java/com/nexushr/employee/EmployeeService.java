@@ -116,6 +116,17 @@ public class EmployeeService {
         step.setDecidedAt(Instant.now());
         return step;
     }
+    // ADD THESE TO EmployeeService.java
+
+    @Transactional
+    public Employee updateEmployee(Employee employee) {
+        return employees.save(employee);
+    }
+    public List<Employee> getPendingProfileEditRequests() {
+        return employees.findAll().stream()
+                .filter(e -> "PENDING".equals(e.getEditRequestStatus()))
+                .toList();
+    }
     @Transactional
     public void updateSecurityRole(UUID employeeId, String targetRole) {
         Employee employee = get(employeeId);

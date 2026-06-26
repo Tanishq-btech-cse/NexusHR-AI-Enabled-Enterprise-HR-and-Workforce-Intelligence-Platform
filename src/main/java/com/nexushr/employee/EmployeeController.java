@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -105,13 +106,56 @@ public class EmployeeController {
 
         service.updateSecurityRole(id, targetRole);
     }
+
     @PatchMapping("/{id}/remote")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'HR')")
     public ResponseEntity<?> toggleRemote(@PathVariable UUID id, @RequestParam boolean isRemote) {
         service.toggleRemoteStatus(id, isRemote);
-
         return ResponseEntity.ok().body("{\"message\": \"Work model updated successfully.\"}");
     }
+
+    @GetMapping("/me/profile")
+    public Employee getMyProfile(Principal principal) {
+        return service.findByEmail(principal.getName());
+    }
+
+    @PostMapping("/me/profile")
+    public Employee updateMyProfile(Principal principal, @RequestBody Employee payload) {
+        Employee employee = service.findByEmail(principal.getName());
+
+        employee.setFatherName(payload.getFatherName());
+        employee.setMotherName(payload.getMotherName());
+        employee.setAddress(payload.getAddress());
+        employee.setAadhaarNumber(payload.getAadhaarNumber());
+        employee.setPanNumber(payload.getPanNumber());
+
+        employee.setProfileCompleted(true);
+        employee.setEditRequestStatus("NONE");
+
+        return service.updateEmployee(employee);
+    }
+
+    @PostMapping("/me/profile/request-edit")
+    public Employee requestProfileEdit(Principal principal) {
+        Employee employee = service.findByEmail(principal.getName());
+        employee.setEditRequestStatus("PENDING");
+        return service.updateEmployee(employee);
+    }
+
+    @GetMapping("/profile-edit-requests")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public List<Employee> getProfileEditRequests() {
+        return service.getPendingProfileEditRequests();
+    }
+
+    @PostMapping("/{id}/profile/approve-edit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    public Employee approveProfileEdit(@PathVariable UUID id) {
+        Employee employee = service.get(id);
+        employee.setEditRequestStatus("APPROVED");
+        return service.updateEmployee(employee);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable UUID id) {
