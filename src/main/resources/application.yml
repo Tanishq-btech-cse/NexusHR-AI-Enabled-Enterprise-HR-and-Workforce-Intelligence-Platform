@@ -9,7 +9,6 @@ spring:
       max-file-size: 1024MB
       max-request-size: 1024MB
 
-  # --- Database ---
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/nexushr}
     username: ${SPRING_DATASOURCE_USERNAME:nexushr}
@@ -30,7 +29,6 @@ spring:
   flyway:
     enabled: false
 
-  # --- Caching ---
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -38,7 +36,6 @@ spring:
   cache:
     type: redis
 
-  # --- Spring AI ---
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}
@@ -46,7 +43,6 @@ spring:
         options:
           model: ${OPENAI_MODEL:gpt-4o-mini}
 
-# --- Server & Monitoring ---
 server:
   port: ${SERVER_PORT:8080}
 
@@ -60,7 +56,6 @@ management:
       probes:
         enabled: true
 
-# --- Custom App Security & Notifications ---
 app:
   security:
     jwt-secret: ${JWT_SECRET:replace-this-with-at-least-32-characters}
@@ -72,7 +67,6 @@ app:
     auth-token: ${TWILIO_AUTH_TOKEN:}
     phone-number: ${TWILIO_PHONE_NUMBER:}
 
-# --- Sentry Logging ---
 sentry:
   dsn: ${SENTRY_DSN:}
   traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.1}

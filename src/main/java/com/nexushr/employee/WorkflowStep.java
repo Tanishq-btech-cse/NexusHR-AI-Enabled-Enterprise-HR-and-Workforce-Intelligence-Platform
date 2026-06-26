@@ -30,71 +30,54 @@ public class WorkflowStep extends AuditableEntity {
     private UUID approverId;
     private Instant decidedAt;
     private String comment;
-
     public UUID getId() {
         return id;
     }
-
     public UUID getEmployeeId() {
         return employeeId;
     }
-
     public void setEmployeeId(UUID employeeId) {
         this.employeeId = employeeId;
     }
-
     public String getWorkflowType() {
         return workflowType;
     }
-
     public void setWorkflowType(String workflowType) {
         this.workflowType = workflowType;
     }
-
     public String getStepName() {
         return stepName;
     }
-
     public void setStepName(String stepName) {
         this.stepName = stepName;
     }
-
     public int getStepOrder() {
         return stepOrder;
     }
-
     public void setStepOrder(int stepOrder) {
         this.stepOrder = stepOrder;
     }
-
     public ApprovalStatus getStatus() {
         return status;
     }
-
     public void setStatus(ApprovalStatus status) {
         this.status = status;
     }
-
     public UUID getApproverId() {
         return approverId;
     }
-
     public void setApproverId(UUID approverId) {
         this.approverId = approverId;
     }
-
     public Instant getDecidedAt() {
         return decidedAt;
     }
-
     public void setDecidedAt(Instant decidedAt) {
         this.decidedAt = decidedAt;
     }
-
     public String getComment() {
         return comment;
     }
-
     public void setComment(String comment) {
         this.comment = comment;
     }

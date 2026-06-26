@@ -19,8 +19,6 @@ public class SmsService {
 
     @Value("${app.twilio.phone-number}")
     private String fromPhoneNumber;
-
-    // This method runs once when Spring Boot starts up to authenticate with Twilio
     @PostConstruct
     public void init() {
         if (accountSid != null && !accountSid.isEmpty()) {
@@ -31,7 +29,6 @@ public class SmsService {
     @Async
     public void sendSms(String toPhoneNumber, String body) {
         try {
-            // Twilio requires phone numbers in E.164 format (e.g., +1234567890)
             Message message = Message.creator(
                     new PhoneNumber(toPhoneNumber),
                     new PhoneNumber(fromPhoneNumber),

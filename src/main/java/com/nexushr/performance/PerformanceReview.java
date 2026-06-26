@@ -32,7 +32,6 @@ public class PerformanceReview extends AuditableEntity {
     @Column(nullable = false)
     private ReviewStatus status = ReviewStatus.DRAFT;
     private String feedback;
-
     public UUID getId() { return id; }
     public UUID getEmployeeId() { return employeeId; }
     public void setEmployeeId(UUID employeeId) { this.employeeId = employeeId; }

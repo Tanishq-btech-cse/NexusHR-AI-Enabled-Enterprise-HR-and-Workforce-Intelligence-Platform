@@ -21,10 +21,6 @@ public class DocumentController {
         this.documentService = documentService;
     }
 
-    // ---------------------------------------------------------
-    // EMPLOYEE ENDPOINTS
-    // ---------------------------------------------------------
-
     @PostMapping(value = "/upload", consumes = {"multipart/form-data"})
     public ResponseEntity<EmployeeDocument> uploadDocument(
             @RequestParam("file") MultipartFile file,
@@ -38,10 +34,6 @@ public class DocumentController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
-    // ---------------------------------------------------------
-    // MANAGER / ADMIN ENDPOINTS
-    // ---------------------------------------------------------
 
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -82,7 +74,6 @@ public class DocumentController {
         EmployeeDocument doc = documentService.getDocumentById(id);
 
         return ResponseEntity.ok()
-                // "inline" tells the browser to try and open it (like a PDF or Image) instead of forcing a download
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + doc.getFileName() + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(resource);

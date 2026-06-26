@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "password_reset_tokens_new") // <-- This forces a brand new, unlocked table
+@Table(name = "password_reset_tokens_new")
 public class PasswordResetToken {
 
     @Id
@@ -14,7 +14,6 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    // Notice it is @ManyToOne now, preventing the unique constraint crash!
     @ManyToOne(targetEntity = AppUser.class, fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
     private AppUser user;

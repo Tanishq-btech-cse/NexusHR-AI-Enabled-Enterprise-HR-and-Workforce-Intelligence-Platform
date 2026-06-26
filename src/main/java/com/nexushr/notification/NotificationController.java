@@ -17,7 +17,6 @@ public class NotificationController {
     public NotificationController(NotificationService service) {
         this.service = service;
     }
-
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','HR','MANAGER')")
     NotificationMessage send(@Valid @RequestBody NotificationRequest request) {
@@ -28,7 +27,6 @@ public class NotificationController {
         message.setBody(request.body());
         return service.queue(message);
     }
-
     public record NotificationRequest(@NotBlank String recipient, @NotNull NotificationChannel channel,
                                       @NotBlank String subject, @NotBlank String body) {
     }

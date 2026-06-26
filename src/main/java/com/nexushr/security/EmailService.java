@@ -11,8 +11,6 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final Resend resend;
-
-    // Spring injects the API key from your application.yml / Environment Variables
     public EmailService(@Value("${app.resend.api-key}") String apiKey) {
         this.resend = new Resend(apiKey);
     }
@@ -30,11 +28,8 @@ public class EmailService {
     public void sendGeneralEmail(String to, String subject, String body) {
         sendEmail(to, subject, body);
     }
-
-    // A private helper method to actually talk to the Resend API
     private void sendEmail(String to, String subject, String body) {
         CreateEmailOptions params = CreateEmailOptions.builder()
-                // NOTE: Until you buy a real domain name, you MUST use this exact 'from' address
                 .from("NexusHR <onboarding@resend.dev>")
                 .to(to)
                 .subject(subject)

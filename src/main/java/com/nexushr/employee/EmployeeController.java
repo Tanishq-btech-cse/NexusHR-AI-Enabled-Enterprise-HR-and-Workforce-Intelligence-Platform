@@ -98,10 +98,7 @@ public class EmployeeController {
     @PutMapping("/{id}/security-role")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public void updateSecurityRole(@PathVariable UUID id, @RequestBody Map<String, String> request) {
-        // Check for "role", and if it's missing, check for "security-role"
         String targetRole = request.getOrDefault("role", request.get("security-role"));
-
-        // Guard clause to prevent NullPointerExceptions in the Service layer
         if (targetRole == null || targetRole.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A valid role must be provided in the JSON payload.");
         }
@@ -111,8 +108,6 @@ public class EmployeeController {
     @PatchMapping("/{id}/remote")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'HR')")
     public ResponseEntity<?> toggleRemote(@PathVariable UUID id, @RequestParam boolean isRemote) {
-
-        // We now call the service instead of the repository directly
         service.toggleRemoteStatus(id, isRemote);
 
         return ResponseEntity.ok().body("{\"message\": \"Work model updated successfully.\"}");
@@ -127,14 +122,11 @@ public class EmployeeController {
                                         @NotBlank String lastName, @Email String workEmail,
                                         @NotNull LocalDate joiningDate, Map<String, Object> profile) {
     }
-
     public record RoleAssignmentRequest(@NotBlank String department, @NotBlank String designation, UUID managerId) {
     }
-
     public record DocumentRequest(@NotBlank String documentType, @NotBlank String fileName,
                                   @NotBlank String storageUrl) {
     }
-
     public record DecisionRequest(@NotNull ApprovalStatus status, UUID approverId, String comment) {
     }
 }

@@ -14,10 +14,8 @@ public class Candidate {
     private String name;
     private String email;
     private String targetRole;
-    private String status = "APPLIED"; // APPLIED, INTERVIEWING, HIRED, REJECTED
+    private String status = "APPLIED";
     private LocalDate appliedDate = LocalDate.now();
-
-    // Getters and Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
     public String getName() { return name; }

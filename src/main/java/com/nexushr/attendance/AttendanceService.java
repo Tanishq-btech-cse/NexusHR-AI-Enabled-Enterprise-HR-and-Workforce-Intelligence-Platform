@@ -21,9 +21,7 @@ public class AttendanceService {
     private final AttendanceRecordRepository attendance;
     private final LeaveRequestRepository leaves;
     private final LeaveBalanceRepository balances;
-    private final EmployeeRepository employeeRepository; // 🌟 Added Employee Repository
-
-    // 🌟 Updated constructor to include EmployeeRepository
+    private final EmployeeRepository employeeRepository;
     public AttendanceService(AttendanceRecordRepository attendance,
                              LeaveRequestRepository leaves,
                              LeaveBalanceRepository balances,
@@ -38,7 +36,6 @@ public class AttendanceService {
     public AttendanceRecord biometricPunch(UUID employeeId, String deviceId) {
         LocalDate today = LocalDate.now();
 
-        // 1. Find existing record for today or create a new one
         AttendanceRecord record = attendance.findByEmployeeIdAndWorkDate(employeeId, today).orElseGet(() -> {
             AttendanceRecord created = new AttendanceRecord();
             created.setEmployeeId(employeeId);
@@ -46,40 +43,29 @@ public class AttendanceService {
             return created;
         });
 
-        // 2. Fetch the employee profile to check their Work Model (Remote vs Office)
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
 
         if (record.getCheckInAt() == null) {
-            // First punch of the day
             record.setCheckInAt(Instant.now());
-            // Tentatively set their status based on their profile
             record.setStatus(employee.isRemote() ? AttendanceStatus.REMOTE : AttendanceStatus.PRESENT);
         } else {
-            // Second punch of the day (Punch Out)
             record.setCheckOutAt(Instant.now());
+            LocalTime punchInStart = LocalTime.of(8, 0);
+            LocalTime punchInEnd = LocalTime.of(9, 0);
+            LocalTime punchOutStart = LocalTime.of(17, 0);
+            LocalTime punchOutEnd = LocalTime.of(18, 0);
 
-            // 🌟 3. Strict Time Window Business Rules Engine
-            LocalTime punchInStart = LocalTime.of(8, 0);   // 8:00 AM
-            LocalTime punchInEnd = LocalTime.of(9, 0);     // 9:00 AM
-            LocalTime punchOutStart = LocalTime.of(17, 0); // 5:00 PM
-            LocalTime punchOutEnd = LocalTime.of(18, 0);   // 6:00 PM
-
-            // Convert server Instant time to Local Time for comparison
             ZoneId zone = ZoneId.systemDefault();
             LocalTime actualPunchIn = record.getCheckInAt().atZone(zone).toLocalTime();
             LocalTime actualPunchOut = record.getCheckOutAt().atZone(zone).toLocalTime();
 
-            // Evaluate if punches fell exactly inside the allowed windows
             boolean isValidPunchIn = !actualPunchIn.isBefore(punchInStart) && !actualPunchIn.isAfter(punchInEnd);
             boolean isValidPunchOut = !actualPunchOut.isBefore(punchOutStart) && !actualPunchOut.isAfter(punchOutEnd);
 
-            // 4. Assign Final Status
             if (isValidPunchIn && isValidPunchOut) {
-                // They followed the rules, set status based on their assigned work model
                 record.setStatus(employee.isRemote() ? AttendanceStatus.REMOTE : AttendanceStatus.PRESENT);
             } else {
-                // They missed the compliance windows, automatically flag as absent
                 record.setStatus(AttendanceStatus.ABSENT);
             }
         }
@@ -169,7 +155,6 @@ public class AttendanceService {
                 "absent", attendance.countByWorkDateAndStatus(date, AttendanceStatus.ABSENT),
                 "pendingLeaves", leaves.countByStatus(LeaveStatus.PENDING),
                 "pendingRequests", pendingRequestsList,
-                // 🌟 2. Add them to the map payload
                 "todaysRecords", todaysLogs
         );
     }

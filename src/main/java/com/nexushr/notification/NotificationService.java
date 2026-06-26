@@ -7,9 +7,7 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     private final EmailService emailService;
-    private final SmsService smsService; // <-- Add this
-
-    // Inject both services via the constructor
+    private final SmsService smsService;
     public NotificationService(EmailService emailService, SmsService smsService) {
         this.emailService = emailService;
         this.smsService = smsService;
@@ -23,8 +21,6 @@ public class NotificationService {
                     message.getBody()
             );
         } else if (NotificationChannel.SMS.equals(message.getChannel())) {
-            // Trigger the background SMS sender!
-            // Note: Twilio ignores the 'subject', so we just pass the body.
             smsService.sendSms(message.getRecipient(), message.getBody());
         }
 

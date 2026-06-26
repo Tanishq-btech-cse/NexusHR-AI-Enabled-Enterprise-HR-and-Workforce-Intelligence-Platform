@@ -12,7 +12,6 @@ public class AiAssistantController {
 
     private final ChatClient chatClient;
 
-    // Inject Spring AI's ChatClient (Auto-configured via your application.yml)
     public AiAssistantController(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
     }
@@ -32,7 +31,6 @@ public class AiAssistantController {
 
             return Map.of("answer", aiResponse);
         } catch (Exception e) {
-            // This will print the ACTUAL error to your browser console
             e.printStackTrace();
             return Map.of("answer", "ERROR: " + e.getMessage());
         }

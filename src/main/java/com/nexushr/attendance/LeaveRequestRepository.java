@@ -8,6 +8,5 @@ import java.util.UUID;
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequest, UUID> {
     List<LeaveRequest> findByEmployeeId(UUID employeeId);
     long countByStatus(LeaveStatus status);
-
     List<LeaveRequest> findByStatus(LeaveStatus leaveStatus);
 }

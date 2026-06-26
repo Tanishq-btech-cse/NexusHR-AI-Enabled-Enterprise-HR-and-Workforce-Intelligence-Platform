@@ -25,7 +25,6 @@ public class EmployeeService {
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final LeaveBalanceRepository leaveBalanceRepository; // 🌟 Injected repository
-
     public EmployeeService(EmployeeRepository employees,
                            EmployeeDocumentRepository documents,
                            WorkflowStepRepository workflowSteps,
@@ -39,12 +38,10 @@ public class EmployeeService {
         this.passwordEncoder = passwordEncoder;
         this.leaveBalanceRepository = leaveBalanceRepository;
     }
-
     @Transactional
     public Employee create(Employee employee) {
         employee.setStatus(EmployeeStatus.ONBOARDING);
         Employee saved = employees.save(employee);
-
         if (!userRepository.existsByEmail(employee.getWorkEmail())) {
             AppUser securityUser = new AppUser();
             securityUser.setEmail(employee.getWorkEmail());
@@ -52,7 +49,6 @@ public class EmployeeService {
             securityUser.setRoles(Set.of(AppRole.EMPLOYEE));
             userRepository.save(securityUser);
         }
-
         initDefaultLeaveBalance(saved.getId(), "ANNUAL", 21);
         initDefaultLeaveBalance(saved.getId(), "SICK", 12);
         initDefaultLeaveBalance(saved.getId(), "CASUAL", 7);
@@ -62,7 +58,6 @@ public class EmployeeService {
         createStep(saved.getId(), "ONBOARDING", "IT access provisioning", 3);
         return saved;
     }
-
     private void initDefaultLeaveBalance(UUID employeeId, String leaveType, int openingBalance) {
         LeaveBalance balance = new LeaveBalance();
         balance.setEmployeeId(employeeId);
@@ -75,7 +70,6 @@ public class EmployeeService {
     public List<Employee> list() {
         return employees.findAll();
     }
-
     public Employee findByEmail(String email) {
         return employees.findAll().stream()
                 .filter(e -> e.getWorkEmail().equalsIgnoreCase(email))
@@ -86,7 +80,6 @@ public class EmployeeService {
     public Employee get(UUID id) {
         return employees.findById(id).orElseThrow(() -> new EntityNotFoundException("Employee not found"));
     }
-
     @Transactional
     public Employee assignRole(UUID id, String department, String designation, UUID managerId) {
         Employee employee = get(id);
@@ -95,7 +88,6 @@ public class EmployeeService {
         employee.setManagerId(managerId);
         return employee;
     }
-
     @Transactional
     public Employee offboard(UUID id) {
         Employee employee = get(id);
@@ -105,19 +97,16 @@ public class EmployeeService {
         createStep(employee.getId(), "OFFBOARDING", "IT access revocation", 3);
         return employee;
     }
-
     @Transactional
     public EmployeeDocument addDocument(UUID employeeId, EmployeeDocument document) {
         get(employeeId);
         document.setEmployeeId(employeeId);
         return documents.save(document);
     }
-
     public List<EmployeeDocument> documents(UUID employeeId) {
         get(employeeId);
         return documents.findByEmployeeId(employeeId);
     }
-
     @Transactional
     public WorkflowStep decide(UUID stepId, ApprovalStatus status, UUID approverId, String comment) {
         WorkflowStep step = workflowSteps.findById(stepId).orElseThrow(() -> new EntityNotFoundException("Workflow step not found"));
@@ -127,28 +116,19 @@ public class EmployeeService {
         step.setDecidedAt(Instant.now());
         return step;
     }
-
     @Transactional
     public void updateSecurityRole(UUID employeeId, String targetRole) {
         Employee employee = get(employeeId);
-
-        // 1. Use ResponseStatusException so Spring knows to send a 404 instead of crashing with a 500
         AppUser securityUser = userRepository.findByEmail(employee.getWorkEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Cannot update role: No security credentials profile found for this employee."));
-
-        // 2. Clear the existing Hibernate-managed collection safely
         securityUser.getRoles().clear();
-
-        // 3. Add the new role to the existing mutable set
         switch (targetRole.toUpperCase()) {
             case "ADMIN" -> securityUser.getRoles().add(AppRole.ADMIN);
             case "HR" -> securityUser.getRoles().add(AppRole.HR);
             case "MANAGER" -> securityUser.getRoles().add(AppRole.MANAGER);
             default -> securityUser.getRoles().add(AppRole.EMPLOYEE);
         }
-
-        // 4. Save the user
         userRepository.save(securityUser);
     }
 
@@ -174,11 +154,9 @@ public class EmployeeService {
         workflowSteps.save(step);
     }
 
-    // Add this new method to EmployeeService.java
     public void toggleRemoteStatus(UUID employeeId, boolean isRemote) {
         Employee employee = employees.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-
         employee.setRemote(isRemote);
         employees.save(employee);
     }

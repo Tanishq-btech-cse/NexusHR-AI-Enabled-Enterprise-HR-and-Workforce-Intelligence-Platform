@@ -35,24 +35,14 @@ public class PasswordResetController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
         String email = request.get("email");
 
-        // We use .orElse(null) to prevent leaking which emails exist in the database (Security Best Practice)
         AppUser user = userRepository.findByEmail(email).orElse(null);
         if (user != null) {
-            // Delete any old unused tokens for this user
             tokenRepository.deleteByUser(user);
-
-            // Generate secure token
             String token = UUID.randomUUID().toString();
             tokenRepository.save(new PasswordResetToken(token, user));
-
-            // Format the frontend link (Make sure this matches your Vercel URL in production!)
             String resetLink = "https://nexus-hr-ai-enabled-enterprise-hr-and-workforce-inte-q69s6soby.vercel.app/reset-password?token=" + token;
-
-            // Send the email
             emailService.sendResetEmail(user.getEmail(), resetLink);
         }
-
-        // Always return success so hackers can't "guess" emails by looking for errors
         return ResponseEntity.ok(Map.of("message", "If that email exists, a reset link has been sent."));
     }
 
@@ -69,13 +59,9 @@ public class PasswordResetController {
             tokenRepository.delete(resetToken);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token has expired. Please request a new one.");
         }
-
-        // Hash and save the new password
         AppUser user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-
-        // Delete token so it cannot be reused
         tokenRepository.delete(resetToken);
 
         return ResponseEntity.ok(Map.of("message", "Password successfully reset."));

@@ -34,7 +34,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").hasRole("ADMIN")
-                        // 🌟 EXPLICITLY allow POST requests to the apply endpoint here
                         .requestMatchers(HttpMethod.POST, "/api/v1/recruitment/apply").permitAll()
 
                         .requestMatchers("/actuator/**", "/api/v1/auth/**", "/error").permitAll()
