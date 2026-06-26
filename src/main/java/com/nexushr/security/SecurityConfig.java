@@ -33,16 +33,15 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        // 🌟 FIX: Most specific request rules MUST go at the very top
                         .requestMatchers(HttpMethod.GET, "/actuator/prometheus").hasRole("ADMIN")
-                        // 🌟 Then follow up with the broad generic allowances
-                        // 👇 ADDED /api/v1/recruitment/apply TO PERMIT ALL
-                        .requestMatchers("/actuator/**", "/api/v1/auth/**", "/error", "/api/v1/recruitment/apply").permitAll()
+                        // 🌟 EXPLICITLY allow POST requests to the apply endpoint here
+                        .requestMatchers(HttpMethod.POST, "/api/v1/recruitment/apply").permitAll()
+
+                        .requestMatchers("/actuator/**", "/api/v1/auth/**", "/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
