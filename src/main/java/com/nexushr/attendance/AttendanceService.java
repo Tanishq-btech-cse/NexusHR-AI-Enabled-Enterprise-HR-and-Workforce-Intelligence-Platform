@@ -145,7 +145,6 @@ public class AttendanceService {
 
     public Map<String, Object> dashboard(LocalDate date) {
         List<LeaveRequest> pendingRequestsList = leaves.findByStatus(LeaveStatus.PENDING);
-        // 🌟 1. Fetch the raw records for today
         List<AttendanceRecord> todaysLogs = attendance.findByWorkDate(date);
 
         return Map.of(

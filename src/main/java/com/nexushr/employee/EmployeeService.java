@@ -116,8 +116,6 @@ public class EmployeeService {
         step.setDecidedAt(Instant.now());
         return step;
     }
-    // ADD THESE TO EmployeeService.java
-
     @Transactional
     public Employee updateEmployee(Employee employee) {
         return employees.save(employee);

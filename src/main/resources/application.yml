@@ -16,6 +16,7 @@ spring:
   sql:
     init:
       mode: always
+      continue-on-error: true
   jpa:
     defer-datasource-initialization: true
     hibernate:
