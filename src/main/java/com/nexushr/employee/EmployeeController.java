@@ -142,7 +142,8 @@ public class EmployeeController {
         return service.updateEmployee(employee);
     }
 
-    @GetMapping("/profile-edit-requests")
+    // 🌟 FIX: Updated path from "/profile-edit-requests" to avoid UUID conflict!
+    @GetMapping("/requests/profile-edits")
     @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
     public List<Employee> getProfileEditRequests() {
         return service.getPendingProfileEditRequests();
